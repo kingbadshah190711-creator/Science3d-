@@ -9,6 +9,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Find project folder
         run: echo "PROJECT_DIR=$(dirname $(find . -name package.json -not -path '*/node_modules/*' | head -1))" >> $GITHUB_ENV
+      - name: Prepare www
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          mkdir -p www
+          for f in index.html ai.html lab.html; do
+            p=$(find . -name "$f" -not -path './node_modules/*' -not -path './www/*' | head -1)
+            if [ -n "$p" ]; then cp "$p" "www/$f"; fi
+          done
+          ls www
+          test -f www/index.html || (echo "HTML files missing in repository" && exit 1)
       - uses: actions/setup-node@v4
         with:
           node-version: 20
