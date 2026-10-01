@@ -29,16 +29,16 @@ button.on{background:var(--ac);color:#04231d;border-color:var(--ac);font-weight:
 #info h2{font-size:16px;margin:0 0 4px}
 #info p{margin:0 0 4px;font-size:14px;line-height:1.5;color:var(--mut)}
 #info .tag{font-size:12px;color:var(--ac);font-weight:700}
-</style>
+#sr{width:100%;margin-bottom:6px;font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 10px}#items{flex-wrap:wrap;max-height:112px;overflow-y:auto}#info button{margin-top:6px;background:var(--ac);color:#04231d;border-color:var(--ac);font-weight:700}#pt{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:8px;display:none;touch-action:pan-x pan-y}.lg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}.lg span{font-size:11px;color:#12302b;padding:2px 7px;border-radius:999px}.ptg{display:grid;grid-template-columns:repeat(18,44px);grid-template-rows:16px repeat(7,48px) 12px 48px 48px;gap:2px;width:max-content}.gh{font-size:10px;color:var(--mut);text-align:center;font-style:normal}.el{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;color:#12302b;cursor:pointer;line-height:1.1}.el .z{font-size:9px;align-self:flex-start;padding-left:3px}.el .s{font-size:15px;font-weight:700}.el .m{font-size:8px}</style>
 </head>
 <body>
 <header>
 <h1>Science3D – 3D Diagram Lab</h1>
 <div class="row" id="subj"></div>
-<div class="row" id="items"></div>
+<input id="sr" placeholder="Search atom / molecule…" aria-label="Search"><div class="row" id="items"></div>
 </header>
 <div id="stage">
-<div class="tools">
+<div id="pt"></div><div class="tools">
 <button id="bLab" class="on">Labels</button>
 <button id="bRot" class="on">Auto-rotate</button>
 </div>
@@ -67,7 +67,7 @@ function sph(r,c,pos,o){const m=new THREE.Mesh(new THREE.SphereGeometry(r,32,24)
 function bond(a,b,order){
   const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),L=d.length(),dir=d.clone().normalize();
   let off=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,0,1));if(off.length()<.1)off.set(0,1,0);off.normalize().multiplyScalar(.1);
-  const g=new THREE.Group(),offs=order==2?[-1,1]:[0];
+  const g=new THREE.Group(),offs=order==3?[-1,0,1]:order==2?[-1,1]:[0];
   offs.forEach(s=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,L,12),mat(0x9aa7a4));
     m.position.copy(A).add(B).multiplyScalar(.5).add(off.clone().multiplyScalar(s));
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);g.add(m)});
@@ -77,31 +77,49 @@ function addLabel(text,pos,html){
   el.onclick=e=>{e.stopPropagation();labels.forEach(l=>l.el.classList.remove('sel'));el.classList.add('sel');if(html)showInfo(html)};
   stage.appendChild(el);labels.push({el,pos:new THREE.Vector3(...pos)})}
 function showInfo(h){info.innerHTML=h}
-function clearAll(){scene.remove(group);group=new THREE.Group();scene.add(group);labels.forEach(l=>l.el.remove());labels=[];anim=[];group.rotation.set(.3,0,0)}
+function clearAll(){scene.remove(group);group=new THREE.Group();scene.add(group);labels.forEach(l=>l.el.remove());labels=[];anim=[];group.rotation.set(.3,0,0);zoom=7;document.getElementById('pt').style.display='none';document.querySelector('.tools').style.display=''}
 
 /* ---------- ATOMS (Chemistry) ---------- */
-const ATOMS={H:{n:'Hydrogen',z:1,a:1,sh:[1]},He:{n:'Helium',z:2,a:4,sh:[2]},C:{n:'Carbon',z:6,a:12,sh:[2,4]},N:{n:'Nitrogen',z:7,a:14,sh:[2,5]},O:{n:'Oxygen',z:8,a:16,sh:[2,6]},Na:{n:'Sodium',z:11,a:23,sh:[2,8,1]},Cl:{n:'Chlorine',z:17,a:35,sh:[2,8,7]}};
+const EL='H Hydrogen 1.008|He Helium 4.003|Li Lithium 6.94|Be Beryllium 9.012|B Boron 10.81|C Carbon 12.011|N Nitrogen 14.007|O Oxygen 15.999|F Fluorine 18.998|Ne Neon 20.180|Na Sodium 22.990|Mg Magnesium 24.305|Al Aluminium 26.982|Si Silicon 28.085|P Phosphorus 30.974|S Sulphur 32.06|Cl Chlorine 35.45|Ar Argon 39.948|K Potassium 39.098|Ca Calcium 40.078|Sc Scandium 44.956|Ti Titanium 47.867|V Vanadium 50.942|Cr Chromium 51.996|Mn Manganese 54.938|Fe Iron 55.845|Co Cobalt 58.933|Ni Nickel 58.693|Cu Copper 63.546|Zn Zinc 65.38|Ga Gallium 69.723|Ge Germanium 72.630|As Arsenic 74.922|Se Selenium 78.971|Br Bromine 79.904|Kr Krypton 83.798|Rb Rubidium 85.468|Sr Strontium 87.62|Y Yttrium 88.906|Zr Zirconium 91.224|Nb Niobium 92.906|Mo Molybdenum 95.95|Tc Technetium 98|Ru Ruthenium 101.07|Rh Rhodium 102.906|Pd Palladium 106.42|Ag Silver 107.868|Cd Cadmium 112.414|In Indium 114.818|Sn Tin 118.710|Sb Antimony 121.760|Te Tellurium 127.60|I Iodine 126.904|Xe Xenon 131.293|Cs Caesium 132.905|Ba Barium 137.327|La Lanthanum 138.905|Ce Cerium 140.116|Pr Praseodymium 140.908|Nd Neodymium 144.242|Pm Promethium 145|Sm Samarium 150.36|Eu Europium 151.964|Gd Gadolinium 157.25|Tb Terbium 158.925|Dy Dysprosium 162.500|Ho Holmium 164.930|Er Erbium 167.259|Tm Thulium 168.934|Yb Ytterbium 173.045|Lu Lutetium 174.967|Hf Hafnium 178.49|Ta Tantalum 180.948|W Tungsten 183.84|Re Rhenium 186.207|Os Osmium 190.23|Ir Iridium 192.217|Pt Platinum 195.084|Au Gold 196.967|Hg Mercury 200.592|Tl Thallium 204.38|Pb Lead 207.2|Bi Bismuth 208.980|Po Polonium 209|At Astatine 210|Rn Radon 222|Fr Francium 223|Ra Radium 226|Ac Actinium 227|Th Thorium 232.038|Pa Protactinium 231.036|U Uranium 238.029|Np Neptunium 237|Pu Plutonium 244|Am Americium 243|Cm Curium 247|Bk Berkelium 247|Cf Californium 251|Es Einsteinium 252|Fm Fermium 257|Md Mendelevium 258|No Nobelium 259|Lr Lawrencium 262|Rf Rutherfordium 267|Db Dubnium 268|Sg Seaborgium 269|Bh Bohrium 270|Hs Hassium 277';
+const ORB=[['1s',2],['2s',2],['2p',6],['3s',2],['3p',6],['4s',2],['3d',10],['4p',6],['5s',2],['4d',10],['5p',6],['6s',2],['4f',14],['5d',10],['6p',6],['7s',2],['5f',14],['6d',10],['7p',6]];
+const OVR={24:{'4s':1,'3d':5},29:{'4s':1,'3d':10},41:{'5s':1,'4d':4},42:{'5s':1,'4d':5},44:{'5s':1,'4d':7},45:{'5s':1,'4d':8},46:{'5s':0,'4d':10},47:{'5s':1,'4d':10},57:{'4f':0,'5d':1},58:{'4f':1,'5d':1},64:{'4f':7,'5d':1},78:{'5d':9,'6s':1},79:{'5d':10,'6s':1},89:{'5f':0,'6d':1},90:{'5f':0,'6d':2},91:{'5f':2,'6d':1},92:{'5f':3,'6d':1},93:{'5f':4,'6d':1},96:{'5f':7,'6d':1},103:{'6d':0,'7p':1}};
+function config(z){let r=z;const o={};for(const [n,c] of ORB){const t=Math.min(r,c);o[n]=t;r-=t}Object.assign(o,OVR[z]||{});return o}
+const ATOMS={};EL.split('|').forEach((s,i)=>{const [k,n,m]=s.split(' '),z=i+1,o=config(z),sh=[];for(const [q,v] of Object.entries(o)){if(v>0){const x=+q[0]-1;sh[x]=(sh[x]||0)+v}}ATOMS[k]={n,z,m,sh,o}});
 function buildAtom(k){
-  clearAll();const d=ATOMS[k],nuc=sph(.35,0xe0524a,[0,0,0]);group.add(nuc);
-  const names=['K','L','M'],cols=[0x5ab0ff,0x6be08a,0xffc857];
+  clearAll();const d=ATOMS[k];group.add(sph(.35,0xe0524a,[0,0,0]));
+  const names='KLMNOPQ',cols=[0x5ab0ff,0x6be08a,0xffc857,0xff8fa3,0xb18cff,0xff9f5a,0x7fe3e3],n=d.sh.length,gap=n>4?.5:.8;
+  zoom=Math.max(7,(.9+(n-1)*gap)*2.6+1.5);
   d.sh.forEach((cnt,i)=>{
-    const r=.9+i*.8,sub=new THREE.Group();sub.rotation.set(i*.5,i*.4,i*.3);
+    const r=.9+i*gap,sub=new THREE.Group();sub.rotation.set(i*.5,i*.4,i*.3);
     sub.add(new THREE.Mesh(new THREE.TorusGeometry(r,.012,8,80),mat(0x889995)));
-    for(let e=0;e<cnt;e++){const m=sph(.1,cols[i],[0,0,0],{emissive:cols[i],emissiveIntensity:.3});sub.add(m);anim.push({m,r,a:e/cnt*Math.PI*2,s:.012/(1+i*.4)})}
-    group.add(sub);addLabel(names[i]+' shell ('+cnt+'e⁻)',[r*Math.cos(i*.4),0,0],`<span class="tag">Class 9–12 · Atomic Structure</span><h2>${names[i]} shell</h2><p>${cnt} electron(s). Maximum capacity of shell n = 2n² (K=2, L=8, M=18).</p>`);
-  });
-  const p=d.z,nn=d.a-d.z,cfg=d.sh.join(', ');
-  const html=`<span class="tag">Class 9–12 · NEET · JEE</span><h2>${d.n} (${k})</h2><p>Atomic number Z = ${p} · Mass number A = ${d.a}</p><p>Protons = ${p}, Neutrons = ${nn}, Electrons = ${p}. Shell configuration: ${cfg}.</p>`;
+    for(let e=0;e<cnt;e++){const m=sph(n>4?.07:.1,cols[i],[0,0,0],{emissive:cols[i],emissiveIntensity:.3});sub.add(m);anim.push({m,r,a:e/cnt*Math.PI*2,s:.012/(1+i*.4)})}
+    group.add(sub);const v=new THREE.Vector3(r,0,0).applyEuler(sub.rotation);
+    addLabel(names[i]+' ('+cnt+')',[v.x,v.y,v.z],`<span class="tag">Atomic Structure</span><h2>${names[i]} shell (n = ${i+1})</h2><p>${cnt} electron(s). Maximum capacity 2n² = ${2*(i+1)*(i+1)}.</p>`)});
+  const p=d.z,nn=Math.round(parseFloat(d.m))-p,ve=d.sh[n-1],val=p<=20?((p==2||ve==8)?0:(ve<=4?ve:8-ve)):null;
+  const sup=v=>String(v).replace(/\d/g,c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]);
+  const cfg=Object.entries(d.o).filter(e=>e[1]>0).sort((a,b)=>a[0][0]-b[0][0]||'spdf'.indexOf(a[0][1])-'spdf'.indexOf(b[0][1])).map(e=>e[0]+sup(e[1])).join(' ');
+  const rad=(p==43||p==61||p>=84)?' (most stable isotope)':'';
+  const html=`<span class="tag">Class 9–12 · NEET · JEE</span><h2>${d.n} (${k})</h2><p>Atomic number Z = ${p} · Atomic mass = ${d.m} u${rad}</p><p>Protons = ${p}, Neutrons ≈ ${nn}, Electrons = ${p}.</p><p>Shells (K, L, M…): ${d.sh.join(', ')}</p><p>Configuration: ${cfg}</p><p>${val!==null?`Valence electrons: ${ve} · Valency: ${val}`:`Outermost shell electrons: ${ve}`}</p>`;
   addLabel('Nucleus',[0,.35,0],html);showInfo(html)}
-
 /* ---------- MOLECULES (Chemistry) ---------- */
-const COL={H:0xf2f2f2,O:0xe0524a,C:0x4a4f55,N:0x4a7bff};const RAD={H:.3,O:.46,C:.44,N:.44};
+const COL={H:0xf2f2f2,O:0xe0524a,C:0x4a4f55,N:0x4a7bff,F:0x7ee07e,Cl:0x39c24a,B:0xe8a0a0};const RAD={H:.3,O:.46,C:.44,N:.44,F:.4,Cl:.55,B:.42};
 const t=.63;
 const MOLS={
  water:{n:'Water',f:'H₂O',at:[['O',0,0,0],['H',.76,-.59,0],['H',-.76,-.59,0]],bd:[[0,1,1],[0,2,1]],i:'Bent shape · bond angle 104.5° · sp³ (2 lone pairs on O) · polar, H-bonding.'},
  methane:{n:'Methane',f:'CH₄',at:[['C',0,0,0],['H',t,t,t],['H',-t,-t,t],['H',-t,t,-t],['H',t,-t,-t]],bd:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],i:'Tetrahedral · bond angle 109.5° · sp³ hybridisation · non-polar.'},
  co2:{n:'Carbon dioxide',f:'CO₂',at:[['C',0,0,0],['O',-1.16,0,0],['O',1.16,0,0]],bd:[[0,1,2],[0,2,2]],i:'Linear · bond angle 180° · sp hybridisation · two C=O double bonds · non-polar overall.'},
- ammonia:{n:'Ammonia',f:'NH₃',at:[['N',0,.3,0],['H',.85,-.15,0],['H',-.42,-.15,.74],['H',-.42,-.15,-.74]],bd:[[0,1,1],[0,2,1],[0,3,1]],i:'Trigonal pyramidal · bond angle ≈107° · sp³ (1 lone pair on N) · polar.'}};
+ ammonia:{n:'Ammonia',f:'NH₃',at:[['N',0,.3,0],['H',.85,-.15,0],['H',-.42,-.15,.74],['H',-.42,-.15,-.74]],bd:[[0,1,1],[0,2,1],[0,3,1]],i:'Trigonal pyramidal · bond angle ≈107° · sp³ (1 lone pair on N) · polar.'},
+ hcl:{n:'Hydrogen chloride',f:'HCl',at:[['Cl',0,0,0],['H',1.27,0,0]],bd:[[0,1,1]],i:'Linear · polar covalent bond (Cl more electronegative) · dipole moment ≈ 1.03 D.'},
+ o2:{n:'Oxygen',f:'O₂',at:[['O',-.6,0,0],['O',.6,0,0]],bd:[[0,1,2]],i:'O=O double bond (1σ + 1π) · non-polar · paramagnetic (2 unpaired electrons, MOT).'},
+ n2:{n:'Nitrogen',f:'N₂',at:[['N',-.55,0,0],['N',.55,0,0]],bd:[[0,1,3]],i:'N≡N triple bond (1σ + 2π) · very stable, high bond energy · non-polar.'},
+ bf3:{n:'Boron trifluoride',f:'BF₃',at:[['B',0,0,0],['F',0,1.3,0],['F',-1.13,-.65,0],['F',1.13,-.65,0]],bd:[[0,1,1],[0,2,1],[0,3,1]],i:'Trigonal planar · bond angle 120° · sp² · incomplete octet on B (6 electrons) · Lewis acid.'},
+ ethene:{n:'Ethene',f:'C₂H₄',at:[['C',-.67,0,0],['C',.67,0,0],['H',-1.24,.93,0],['H',-1.24,-.93,0],['H',1.24,.93,0],['H',1.24,-.93,0]],bd:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]],i:'Planar · bond angle ≈ 120° · sp² · C=C has one σ and one π bond.'},
+ ethyne:{n:'Ethyne',f:'C₂H₂',at:[['C',-.6,0,0],['C',.6,0,0],['H',-1.66,0,0],['H',1.66,0,0]],bd:[[0,1,3],[0,2,1],[1,3,1]],i:'Linear · bond angle 180° · sp · C≡C has one σ and two π bonds.'}};
+{const bz={n:'Benzene',f:'C₆H₆',at:[],bd:[],i:'Planar hexagon · all C–C bonds equal (139 pm) · 120° · sp² · delocalised π electrons (resonance, aromatic). Kekulé structure shown.'};
+for(let k=0;k<6;k++){const a=k*Math.PI/3;bz.at.push(['C',1.4*Math.cos(a),1.4*Math.sin(a),0])}
+for(let k=0;k<6;k++){const a=k*Math.PI/3;bz.at.push(['H',2.5*Math.cos(a),2.5*Math.sin(a),0])}
+for(let k=0;k<6;k++){bz.bd.push([k,(k+1)%6,k%2?1:2]);bz.bd.push([k,k+6,1])}
+MOLS.benzene=bz}
 function buildMol(k){
   clearAll();const m=MOLS[k];
   m.at.forEach(a=>{group.add(sph(RAD[a[0]],COL[a[0]],[a[1],a[2],a[3]]));addLabel(a[0],[a[1],a[2]+RAD[a[0]],a[3]],null)});
@@ -110,7 +128,7 @@ function buildMol(k){
   labels.forEach(l=>l.el.onclick=e=>{e.stopPropagation();showInfo(html)});showInfo(html)}
 
 /* ---------- ANIMAL CELL (Biology) ---------- */
-function buildCell(){
+function buildCell(plant){
   clearAll();
   group.add(new THREE.Mesh(new THREE.SphereGeometry(2.2,40,28),mat(0x7fd1c0,{transparent:true,opacity:.14,depthWrite:false})));
   const O=[];
@@ -122,22 +140,153 @@ function buildCell(){
   O.push(['Endoplasmic reticulum',[1,1.4,.6],'Network of membranes. Rough ER (with ribosomes) makes proteins; smooth ER makes lipids and detoxifies.']);
   for(let i=0;i<4;i++){const g=new THREE.Mesh(new THREE.TorusGeometry(.45-i*.04,.06,8,30),mat(0xe8c13a));g.rotation.x=Math.PI/2;g.position.set(-1,.9+i*.17,.2);g.scale.set(1,1,.5);group.add(g)}
   O.push(['Golgi apparatus',[-1,1.75,.2],'Stack of flattened sacs (cisternae). Modifies, sorts and packages proteins and lipids for secretion.']);
-  group.add(sph(.2,0xd94f8c,[.6,-1.2,.9]));
-  O.push(['Lysosome',[.6,-1.0,.9],'"Suicide bag." Membrane-bound sac of hydrolytic enzymes that digest worn-out organelles and foreign matter.']);
+  if(!plant)group.add(sph(.2,0xd94f8c,[.6,-1.2,.9]));
+  if(!plant)O.push(['Lysosome',[.6,-1.0,.9],'"Suicide bag." Membrane-bound sac of hydrolytic enzymes that digest worn-out organelles and foreign matter.']);
   for(let i=0;i<30;i++){const a=Math.random()*6.28,b=Math.acos(2*Math.random()-1),r=1.0+Math.random()*1;group.add(sph(.05,0x333333,[r*Math.sin(b)*Math.cos(a),r*Math.sin(b)*Math.sin(a),r*Math.cos(b)]))}
   O.push(['Ribosome',[0,-1.7,.4],'Tiny RNA–protein particles (80S in eukaryotes) that carry out protein synthesis (translation).']);
   O.push(['Cell membrane',[1.6,0,1.5],'Fluid mosaic model (Singer & Nicolson). Selectively permeable phospholipid bilayer with proteins and cholesterol.']);
-  O.forEach(o=>addLabel(o[0],o[1],`<span class="tag">Class 9–11 · NEET · Cell Biology</span><h2>${o[0]}</h2><p>${o[2]}</p>`));
-  showInfo('<span class="tag">Class 9–11 · NEET</span><h2>Animal cell</h2><p>Drag to rotate, pinch/scroll to zoom. Tap any label to learn its function.</p>')}
+  if(plant){group.add(new THREE.Mesh(new THREE.SphereGeometry(2.35,40,28),mat(0x9bd36b,{transparent:true,opacity:.12,depthWrite:false})));
+  [[-.2,-1.3,-.4],[1.2,-.1,1],[-1.5,.1,-.9]].forEach(p=>{const c=sph(.3,0x2f9e44,p);c.scale.set(1.5,.8,.8);group.add(c)});
+  group.add(sph(.55,0x6ec6ff,[.8,-.9,-.9],{transparent:true,opacity:.55}));
+  O.push(['Cell wall',[2.2,.6,.9],'Rigid outer layer of cellulose (plants only). Gives shape and protection; fully permeable.'],['Chloroplast',[1.2,.4,1],'Site of photosynthesis. Chlorophyll in thylakoids (stacked as grana); stroma has Calvin-cycle enzymes. Has its own DNA.'],['Large central vacuole',[.8,-.3,-.9],'Filled with cell sap, bounded by tonoplast. Maintains turgor pressure; stores nutrients and wastes.'])}
+  O.forEach(o=>addLabel(o[0],o[1],`<span class="tag">Class 9–11 · NEET · Cell Biology</span><h2>${o[0]}</h2><p>${o[2]}</p>${ORGMAP[o[0]]?`<button onclick="openOrg('${ORGMAP[o[0]]}')">Inner structure →</button>`:''}`));
+  showInfo(`<span class="tag">Class 9–11 · NEET</span><h2>${plant?'Plant':'Animal'} cell</h2><p>Drag to rotate, pinch/scroll to zoom. Tap any label to learn its function.</p>`)}
+
+/* ---------- INSIDE ORGANELLES (Biology) ---------- */
+const ORGMAP={'Nucleus':'nucleus','Mitochondrion':'mito','Chloroplast':'chloro','Golgi apparatus':'golgi','Endoplasmic reticulum':'er','Ribosome':'ribo','Lysosome':'lyso','Cell membrane':'memb'};
+const SH=(r,c,op,sc)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),mat(c,{transparent:true,opacity:op,depthWrite:false}));if(sc)m.scale.set(...sc);group.add(m);return m};
+const CY=(rt,h,c,pos,rot,sc)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rt,h,20),mat(c));m.position.set(...pos);if(rot)m.rotation.set(...rot);if(sc)m.scale.set(...sc);group.add(m);return m};
+const TO=(R,t,c,pos,rot,sc)=>{const m=new THREE.Mesh(new THREE.TorusGeometry(R,t,10,48),mat(c));m.position.set(...pos);if(rot)m.rotation.set(...rot);if(sc)m.scale.set(...sc);group.add(m);return m};
+const DOT=(r,c,pos)=>{const m=sph(r,c,pos);group.add(m);return m};
+const rnd=(a,b)=>a+Math.random()*(b-a),PI=Math.PI;
+const ORG={
+nucleus:{n:'Nucleus',build(){
+  SH(1.8,0x8a7bff,.16);SH(1.68,0x8a7bff,.12);
+  const pore=p=>{const m=TO(.14,.035,0x333333,p);m.lookAt(0,0,0)};pore([1.76,0,0]);
+  for(let i=0;i<8;i++){const a=rnd(0,6.28),b=Math.acos(rnd(-1,1));pore([1.76*Math.sin(b)*Math.cos(a),1.76*Math.cos(b),1.76*Math.sin(b)*Math.sin(a)])}
+  DOT(.5,0x2c2370,[.5,.1,.3]);
+  const e=new THREE.Mesh(new THREE.TorusKnotGeometry(.55,.035,160,6,3,5),mat(0xffb347));e.position.set(-.4,-.1,-.2);group.add(e);
+  [[1.2,-.5,.6],[-1.1,.7,.8],[.3,-1,-1],[-.8,-.9,.9],[1,.8,-.9]].forEach(p=>DOT(.17,0x4a3f9e,p))},
+ parts:[['Outer nuclear membrane',[0,1.95,0],'Outer layer of the double nuclear envelope; studded with ribosomes and continuous with the endoplasmic reticulum.'],
+ ['Perinuclear space',[1.5,1.2,.6],'20–40 nm gap between the two membranes; continuous with the ER lumen.'],
+ ['Inner nuclear membrane',[-1.6,-1.2,0],'Lined by the nuclear lamina (intermediate filaments) that supports the nucleus and anchors chromatin.'],
+ ['Nuclear pore',[2,.25,0],'Protein complex channel in the envelope; controls movement of mRNA, ribosomal subunits and proteins between nucleus and cytoplasm.'],
+ ['Nucleolus',[.5,.7,.3],'Dense, membraneless body; makes rRNA and assembles ribosomal subunits. Disappears during cell division.'],
+ ['Euchromatin',[-.4,.55,-.2],'Loosely coiled, light-staining chromatin; genetically active (transcription).'],
+ ['Heterochromatin',[1.2,-.8,.6],'Tightly coiled, dark-staining chromatin; genetically inactive; lies near the envelope.'],
+ ['Nucleoplasm',[-1.1,.1,1],'Gel-like matrix (karyolymph) containing nucleotides, enzymes, proteins and chromatin.']]},
+mito:{n:'Mitochondrion',build(){
+  SH(1,0xf08a3c,.16,[2.4,1.3,1.3]);SH(1,0xffb26b,.14,[2.2,1.1,1.1]);
+  for(let i=0;i<7;i++)CY(.04,.9,0xd96b1c,[-1.5+i*.5,(i%2?1:-1)*.38,0],null,[1,1,1]).geometry=new THREE.BoxGeometry(.07,.9,1.4);
+  const t=TO(.2,.035,0xffffff,[.1,0,.3],[1,0,0]);
+  for(let i=0;i<8;i++)DOT(.05,0x333333,[rnd(-1.4,1.4),rnd(-.25,.25),rnd(-.5,.5)])},
+ parts:[['Outer membrane',[0,1.55,0],'Smooth and permeable to small molecules because of porin channels.'],
+ ['Intermembrane space',[2.3,.3,.3],'Narrow gap between the membranes; H⁺ ions accumulate here during electron transport.'],
+ ['Inner membrane',[-1.9,-1,.3],'Impermeable; holds the electron transport chain and ATP synthase (F₀F₁) particles.'],
+ ['Cristae',[.25,.75,.7],'Folds of the inner membrane; increase surface area for ATP production.'],
+ ['Matrix',[-.5,-.15,.9],'Fluid core with enzymes of the Krebs cycle, fatty acid oxidation, DNA and ribosomes.'],
+ ['Mitochondrial DNA',[.1,.4,.3],'Small circular, double-stranded DNA; codes for some mitochondrial proteins (semi-autonomous organelle).'],
+ ['70S ribosomes',[1,-.35,.5],'Prokaryote-like ribosomes that make some mitochondrial proteins.']]},
+chloro:{n:'Chloroplast',build(){
+  SH(1,0x6fd18a,.15,[2.5,1.4,1.4]);SH(1,0x8fe0a2,.15,[2.35,1.25,1.25]);
+  [[-1.2,0,.3],[.2,.2,-.4],[1.3,-.1,.3]].forEach(g=>{for(let j=0;j<6;j++)CY(.42,.07,0x2f9e44,[g[0],g[1]-.3+j*.12,g[2]])});
+  CY(.04,1.3,0x7ccf92,[-.5,.1,-.05],[0,0,PI/2]);CY(.04,1.3,0x7ccf92,[.75,.05,-.05],[0,0,PI/2]);
+  DOT(.25,0xf5f5f5,[0,-.8,.5]);TO(.15,.03,0xffffff,[-.2,.8,.6])},
+ parts:[['Outer membrane',[0,1.6,0],'Freely permeable envelope layer.'],
+ ['Inner membrane',[2.1,.9,.4],'Selectively permeable; controls transport into the stroma.'],
+ ['Intermembrane space',[-2.45,.3,0],'Narrow space between the two envelope membranes.'],
+ ['Stroma',[.7,-.7,.9],'Colourless matrix: Calvin cycle enzymes (dark reaction), DNA, 70S ribosomes, starch.'],
+ ['Granum',[-1.2,.7,.3],'Stack of thylakoids; site of light reaction (PS I, PS II, ATP synthase).'],
+ ['Thylakoid',[1.3,.5,.3],'Flattened membrane disc with chlorophyll; its inside is the lumen where H⁺ builds up.'],
+ ['Stroma lamella',[-.5,-.3,-.05],'Thylakoid that joins one granum to another.'],
+ ['Starch grain',[0,-1.3,.5],'Stored product of photosynthesis.'],
+ ['Chloroplast DNA',[-.2,1.1,.6],'Circular DNA; chloroplast is a semi-autonomous organelle.']]},
+golgi:{n:'Golgi apparatus',build(){
+  for(let i=0;i<6;i++)TO(1.3-Math.abs(i-2.5)*.1,.08,0xe8c13a,[0,-1+i*.4,0],[PI/2,0,0],[1,1,.5]);
+  [[-1,-1.5,.4],[.6,-1.6,-.5],[-.3,-1.7,.8],[1.1,-1.4,.3]].forEach(p=>DOT(.14,0xe0524a,p));
+  [[-.9,1.5,.4],[.7,1.6,-.4],[.2,1.8,.8],[1.2,1.45,.2]].forEach(p=>DOT(.17,0x4aa3e8,p))},
+ parts:[['Cis face',[1.7,-1,0],'Convex receiving (forming) face, near the ER; receives transport vesicles.'],
+ ['Medial cisternae',[1.7,0,0],'Middle sacs where proteins and lipids are modified (e.g. glycosylation).'],
+ ['Trans face',[1.7,1,0],'Concave shipping (maturing) face; sorts and packs products into vesicles.'],
+ ['Cisternae',[-1.7,0,0],'Flat, membrane-bound, parallel sacs stacked like plates.'],
+ ['Transport vesicles',[-1.1,-1.7,.4],'Carry ER products to the cis face.'],
+ ['Secretory vesicles',[-.9,1.75,.4],'Leave the trans face; deliver contents to the membrane, lysosomes or outside.']]},
+er:{n:'Endoplasmic reticulum',build(){
+  for(let j=0;j<3;j++){TO(1,.12,0x4aa3e8,[-1,j*.45-.45,0],[PI/2,0,0],[1,1,.5]);
+   for(let i=0;i<12;i++){const a=rnd(0,6.28),r=1+rnd(-.1,.1);DOT(.06,0x222222,[-1+r*Math.cos(a),j*.45-.3,r*Math.sin(a)])}}
+  const k=new THREE.Mesh(new THREE.TorusKnotGeometry(.7,.07,120,8,2,3),mat(0x7ee0b5));k.position.set(1.7,0,0);group.add(k)},
+ parts:[['Rough ER',[-1,1.1,0],'Cisternae studded with ribosomes; makes and folds proteins. Continuous with the outer nuclear membrane.'],
+ ['Ribosomes on RER',[-2.1,.4,.3],'Bound 80S ribosomes making proteins for secretion and membranes.'],
+ ['Lumen (cisternal space)',[-1,-.1,1.1],'Space inside the ER membrane where proteins fold and are modified.'],
+ ['Smooth ER',[1.7,1,0],'Tubular, no ribosomes; makes lipids and steroids, detoxifies drugs, stores Ca²⁺.']]},
+ribo:{n:'Ribosome',build(){
+  const L=sph(.9,0x4aa3e8,[0,-.3,0]);L.scale.set(1.1,.9,.9);group.add(L);
+  const S=sph(.6,0xe8c13a,[0,.55,0]);S.scale.set(1.1,.55,.8);group.add(S);
+  CY(.04,3.2,0xe0524a,[0,.2,0],[0,0,PI/2]);DOT(.14,0x6be08a,[-.25,.05,.3]);DOT(.14,0x6be08a,[.3,.05,.3]);
+  for(let i=0;i<8;i++)DOT(.09,0xff8fa3,[Math.sin(i)*.15,-1.1-i*.2,0])},
+ parts:[['Large subunit',[1.2,-.5,0],'60S in eukaryotes (50S in prokaryotes); forms peptide bonds (peptidyl transferase, rRNA).'],
+ ['Small subunit',[1.1,.9,0],'40S in eukaryotes (30S in prokaryotes); reads the mRNA codons.'],
+ ['mRNA',[-1.6,.3,0],'Messenger RNA threaded between the subunits.'],
+ ['tRNA at P site',[-.5,-.2,.4],'Holds the growing polypeptide chain.'],
+ ['tRNA at A site',[.7,.2,.5],'Brings in the next amino acid, matched to the codon.'],
+ ['Polypeptide chain',[.6,-2.2,0],'Growing protein leaving the large subunit. Whole ribosome: 80S (eukaryote) or 70S (prokaryote).']]},
+lyso:{n:'Lysosome',build(){
+  SH(1.7,0xd94f8c,.2);for(let i=0;i<40;i++){const a=rnd(0,6.28),b=Math.acos(rnd(-1,1)),r=rnd(0,1.4);DOT(.07,0xffd1e8,[r*Math.sin(b)*Math.cos(a),r*Math.cos(b),r*Math.sin(b)*Math.sin(a)])}
+  DOT(.45,0x8b6b4a,[.4,-.2,.2]);const m=TO(.16,.04,0x333333,[1.7,.3,0]);m.lookAt(0,0,0)},
+ parts:[['Single membrane',[0,1.85,0],'One lipid bilayer; protected from its own enzymes by a glycoprotein lining.'],
+ ['Hydrolytic enzymes',[-.9,.6,.5],'About 40 acid hydrolases (proteases, lipases, nucleases) working best at pH ≈ 5.'],
+ ['Engulfed material',[.4,-.5,.2],'Food particle, bacterium or worn-out organelle being digested (phagosome fusing with lysosome).'],
+ ['Proton pump (H⁺ ATPase)',[1.9,.5,0],'Pumps H⁺ into the lysosome to keep it acidic.']]},
+memb:{n:'Cell membrane',build(){
+  const hg=new THREE.SphereGeometry(.12,12,10),tg=new THREE.CylinderGeometry(.03,.03,.4,6),hm=mat(0xffc857),tm=mat(0xf2f2f2);
+  for(const x of [-1,-.5,0,.5,1])for(const z of [-1,-.5,0,.5,1])for(const s of [1,-1]){
+   const h=new THREE.Mesh(hg,hm);h.position.set(x,s*.42,z);group.add(h);
+   for(const o of [-.07,.07]){const t=new THREE.Mesh(tg,tm);t.position.set(x+o,s*.2,z);group.add(t)}}
+  CY(.22,1.3,0x4aa3e8,[.25,0,.25]);DOT(.3,0xe0524a,[-.75,.95,-.25]);CY(.14,1.2,0x6be08a,[-.75,0,.75]);
+  [0,.25,.5].forEach((o,i)=>DOT(.09,0xff8fa3,[-.75+o*.4,.8+o*.5,.75]));
+  [[.5,.0,-.5],[-.25,-.1,-.25],[.75,.1,.75]].forEach(p=>DOT(.09,0xffffff,p))},
+ parts:[['Phospholipid head',[1,.65,1],'Hydrophilic (water-loving) phosphate head; faces the watery outside and cytoplasm.'],
+ ['Fatty-acid tails',[-1.2,0,1],'Hydrophobic tails face each other inside the bilayer.'],
+ ['Integral protein',[.25,.85,.25],'Spans the bilayer; channels, carriers and receptors (e.g. Na⁺–K⁺ pump).'],
+ ['Peripheral protein',[-.75,1.3,-.25],'Attached to the surface only; enzymes, cytoskeleton anchors.'],
+ ['Glycoprotein',[-.5,1.45,.75],'Protein with a carbohydrate chain; cell recognition and signalling (glycocalyx).'],
+ ['Cholesterol',[.5,-.25,-.5],'Between the tails; keeps the membrane fluid yet stable. Fluid mosaic model: Singer & Nicolson (1972).'],
+ ['Extracellular side',[-1.5,.95,0],'Outside of the cell.'],['Cytoplasmic side',[-1.5,-.95,0],'Inside the cell.']]}};
+function buildOrg(k){clearAll();zoom=6.5;const o=ORG[k];o.build();const tag='Class 11–12 · NEET · Cell Biology';
+  o.parts.forEach(p=>addLabel(p[0],p[1],`<span class="tag">${tag}</span><h2>${p[0]}</h2><p>${p[2]}</p>`));
+  showInfo(`<span class="tag">${tag}</span><h2>${o.n} – inner structure</h2><p>Drag to rotate, pinch to zoom. Tap any label to see that part.</p>`)}
+function openOrg(k){pickSubj('Biology · Inside');[...itemsEl.children].find(b=>b.dataset.k==k).click()}
+
+/* ---------- PERIODIC TABLE ---------- */
+const CATS={alkali:['Alkali metal','#ffb3a7',[3,11,19,37,55,87]],alk:['Alkaline earth metal','#ffd59a',[4,12,20,38,56,88]],tm:['Transition metal','#ffe98a',null],post:['Other metal','#c9e4a1',[13,31,49,50,81,82,83,84]],meta:['Metalloid','#a8dfd0',[5,14,32,33,51,52]],non:['Non-metal','#a9d6f5',[1,6,7,8,15,16,34]],hal:['Halogen','#c3c6ff',[9,17,35,53,85]],nob:['Noble gas','#e3b8f2',[2,10,18,36,54,86]],lan:['Lanthanoid','#f5b8d6',null],act:['Actinoid','#f0a8b8',null]};
+function cat(z){if(z>=58&&z<=71)return 'lan';if(z>=90&&z<=103)return 'act';for(const k in CATS){const l=CATS[k][2];if(l&&l.includes(z))return k}return 'tm'}
+function ptPos(z){if(z==1)return[1,1];if(z==2)return[1,18];if(z<=4)return[2,z-2];if(z<=10)return[2,z+8];if(z<=12)return[3,z-10];if(z<=18)return[3,z];if(z<=36)return[4,z-18];if(z<=54)return[5,z-36];if(z<=56)return[6,z-54];if(z==57)return[6,3];if(z<=71)return['f1',z-55];if(z<=86)return[6,z-68];if(z<=88)return[7,z-86];if(z==89)return[7,3];if(z<=103)return['f2',z-87];return[7,z-100]}
+function cfgStr(d){const sup=v=>String(v).replace(/\d/g,c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]);return Object.entries(d.o).filter(e=>e[1]>0).sort((a,b)=>a[0][0]-b[0][0]||'spdf'.indexOf(a[0][1])-'spdf'.indexOf(b[0][1])).map(e=>e[0]+sup(e[1])).join(' ')}
+function openAtom(k){pickSubj('Chemistry · Atom');[...itemsEl.children].find(b=>b.dataset.k==k).click()}
+function ptInfo(k){const d=ATOMS[k],[r,c]=ptPos(d.z),f=typeof r=='string';
+  showInfo(`<span class="tag">${CATS[cat(d.z)][0]}</span><h2>${d.z} · ${d.n} (${k})</h2><p>Atomic mass: ${d.m} u${(d.z==43||d.z==61||d.z>=84)?' (most stable isotope)':''}</p><p>${f?(r=='f1'?'Lanthanoid series · Period 6 · f-block':'Actinoid series · Period 7 · f-block'):`Group ${c} · Period ${r}`}</p><p>Shells: ${d.sh.join(', ')}</p><p>Configuration: ${cfgStr(d)}</p><button onclick="openAtom('${k}')">3D atom dekhein →</button>`)}
+function showPT(){
+  clearAll();const pt=document.getElementById('pt');pt.style.display='block';document.querySelector('.tools').style.display='none';
+  if(!pt.dataset.b){pt.dataset.b=1;
+    let h='<div class="lg">'+Object.values(CATS).map(c=>`<span style="background:${c[1]}">${c[0]}</span>`).join('')+'</div><div class="ptg">';
+    for(let g=1;g<=18;g++)h+=`<i class="gh" style="grid-row:1;grid-column:${g}">${g}</i>`;
+    Object.keys(ATOMS).forEach(k=>{const d=ATOMS[k],[r,c]=ptPos(d.z),row=r=='f1'?10:r=='f2'?11:r+1;
+      h+=`<div class="el" data-k="${k}" style="grid-row:${row};grid-column:${c};background:${CATS[cat(d.z)][1]}"><span class="z">${d.z}</span><span class="s">${k}</span><span class="m">${(+d.m).toFixed(d.m.includes('.')?2:0)}</span></div>`});
+    h+='</div><p class="gh" style="margin:8px 0 0">Ce–Lu (lanthanoids) aur Th–Lr (actinoids) neeche alag rows mein hain.</p>';
+    pt.innerHTML=h;
+    pt.addEventListener('click',e=>{const el=e.target.closest('.el');if(el)ptInfo(el.dataset.k)});
+    pt.addEventListener('pointerdown',e=>e.stopPropagation());pt.addEventListener('wheel',e=>e.stopPropagation())}
+  showInfo('<span class="tag">Periodic table</span><h2>108 elements</h2><p>Kisi element par tap karein. Poori table dekhne ke liye scroll karein.</p>')}
 
 /* ---------- UI ---------- */
-const SUBJ={'Chemistry · Atom':{list:Object.keys(ATOMS).map(k=>[k,ATOMS[k].n]),fn:buildAtom},'Chemistry · Molecule':{list:Object.keys(MOLS).map(k=>[k,MOLS[k].n]),fn:buildMol},'Biology · Cell':{list:[['cell','Animal cell']],fn:buildCell}};
+const SUBJ={'Chemistry · Periodic Table':{list:[['pt','Periodic table']],fn:showPT},'Chemistry · Atom':{list:Object.keys(ATOMS).map(k=>[k,ATOMS[k].z+' '+k+' · '+ATOMS[k].n]),fn:buildAtom},'Chemistry · Molecule':{list:Object.keys(MOLS).map(k=>[k,MOLS[k].n]),fn:buildMol},'Biology · Cell':{list:[['cell','Animal cell'],['plant','Plant cell']],fn:k=>buildCell(k=='plant')},'Biology · Inside':{list:Object.keys(ORG).map(k=>[k,ORG[k].n]),fn:buildOrg}};
 const subjEl=document.getElementById('subj'),itemsEl=document.getElementById('items');
 function pickSubj(s){
   [...subjEl.children].forEach(b=>b.classList.toggle('on',b.textContent===s));
-  itemsEl.innerHTML='';const S=SUBJ[s];
-  S.list.forEach((it,i)=>{const b=document.createElement('button');b.textContent=it[1];b.onclick=()=>{[...itemsEl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');S.fn(it[0])};itemsEl.appendChild(b);if(i==0)b.click()})}
+  itemsEl.innerHTML='';document.getElementById('sr').value='';const S=SUBJ[s];
+  S.list.forEach((it,i)=>{const b=document.createElement('button');b.textContent=it[1];b.dataset.k=it[0];b.onclick=()=>{[...itemsEl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');S.fn(it[0])};itemsEl.appendChild(b);if(i==0)b.click()})}
 Object.keys(SUBJ).forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>pickSubj(s);subjEl.appendChild(b)});
+document.getElementById('sr').oninput=e=>{const q=e.target.value.toLowerCase();[...itemsEl.children].forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'':'none')};
 document.getElementById('bLab').onclick=e=>{showLab=!showLab;e.target.classList.toggle('on',showLab)};
 document.getElementById('bRot').onclick=e=>{autoRot=!autoRot;e.target.classList.toggle('on',autoRot)};
 
@@ -166,7 +315,7 @@ function loop(){
     l.el.style.display=showLab?'block':'none';
     l.el.style.left=((v.x+1)/2*w)+'px';l.el.style.top=((1-v.y)/2*h)+'px'});
   renderer.render(scene,camera)}
-resize();pickSubj('Chemistry · Atom');loop();
+resize();pickSubj('Chemistry · Periodic Table');loop();
 </script>
 </body>
 </html>
