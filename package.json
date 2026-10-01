@@ -1,0 +1,17 @@
+{
+  "name": "science3d-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "vendor": "cp node_modules/three/build/three.min.js www/three.min.js",
+    "sync": "npm run vendor && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
