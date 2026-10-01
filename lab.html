@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Science3D – 3D Diagram Lab</title>
+<script src="three.min.js"></script>
+<style>
+:root{--bg:#eef3f1;--fg:#12302b;--card:#ffffff;--mut:#51706a;--ac:#0f8f78;--bd:#cfdcd8;--lb:rgba(255,255,255,.92);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d;--lb:rgba(21,41,38,.92)}}
+:root[data-theme="dark"]{--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d;--lb:rgba(21,41,38,.92)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:10px 12px 6px}
+h1{font-size:18px;margin:0 0 8px;letter-spacing:.2px}
+.row{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:999px;padding:7px 13px;white-space:nowrap;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.on{background:var(--ac);color:#04231d;border-color:var(--ac);font-weight:700}
+#stage{flex:1;position:relative;min-height:0;touch-action:none;cursor:grab}
+#stage canvas{display:block;width:100%;height:100%}
+.lab{position:absolute;left:0;top:0;transform:translate(-50%,-130%);background:var(--lb);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:2px 7px;font-size:12px;white-space:nowrap;pointer-events:auto;cursor:pointer}
+.lab.sel{border-color:var(--ac);font-weight:700}
+.tools{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.tools button{border-radius:10px;padding:6px 10px;font-size:13px}
+#info{background:var(--card);border-top:1px solid var(--bd);padding:10px 14px 12px;max-height:34%;overflow:auto}
+#info h2{font-size:16px;margin:0 0 4px}
+#info p{margin:0 0 4px;font-size:14px;line-height:1.5;color:var(--mut)}
+#info .tag{font-size:12px;color:var(--ac);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+<h1>Science3D – 3D Diagram Lab</h1>
+<div class="row" id="subj"></div>
+<div class="row" id="items"></div>
+</header>
+<div id="stage">
+<div class="tools">
+<button id="bLab" class="on">Labels</button>
+<button id="bRot" class="on">Auto-rotate</button>
+</div>
+</div>
+<div id="info"></div>
+
+<script>
+const stage=document.getElementById('stage'),info=document.getElementById('info');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,1,.1,100);
+let zoom=7;
+scene.add(new THREE.AmbientLight(0xffffff,.7));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(4,6,5);scene.add(dl);
+let group=new THREE.Group();scene.add(group);
+let labels=[],anim=[],autoRot=true,showLab=true;
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);
+
+/* ---------- helpers ---------- */
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.45,metalness:.1},o));
+function sph(r,c,pos,o){const m=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),mat(c,o));m.position.set(...pos);return m}
+function bond(a,b,order){
+  const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),L=d.length(),dir=d.clone().normalize();
+  let off=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,0,1));if(off.length()<.1)off.set(0,1,0);off.normalize().multiplyScalar(.1);
+  const g=new THREE.Group(),offs=order==2?[-1,1]:[0];
+  offs.forEach(s=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,L,12),mat(0x9aa7a4));
+    m.position.copy(A).add(B).multiplyScalar(.5).add(off.clone().multiplyScalar(s));
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);g.add(m)});
+  return g}
+function addLabel(text,pos,html){
+  const el=document.createElement('div');el.className='lab';el.textContent=text;
+  el.onclick=e=>{e.stopPropagation();labels.forEach(l=>l.el.classList.remove('sel'));el.classList.add('sel');if(html)showInfo(html)};
+  stage.appendChild(el);labels.push({el,pos:new THREE.Vector3(...pos)})}
+function showInfo(h){info.innerHTML=h}
+function clearAll(){scene.remove(group);group=new THREE.Group();scene.add(group);labels.forEach(l=>l.el.remove());labels=[];anim=[];group.rotation.set(.3,0,0)}
+
+/* ---------- ATOMS (Chemistry) ---------- */
+const ATOMS={H:{n:'Hydrogen',z:1,a:1,sh:[1]},He:{n:'Helium',z:2,a:4,sh:[2]},C:{n:'Carbon',z:6,a:12,sh:[2,4]},N:{n:'Nitrogen',z:7,a:14,sh:[2,5]},O:{n:'Oxygen',z:8,a:16,sh:[2,6]},Na:{n:'Sodium',z:11,a:23,sh:[2,8,1]},Cl:{n:'Chlorine',z:17,a:35,sh:[2,8,7]}};
+function buildAtom(k){
+  clearAll();const d=ATOMS[k],nuc=sph(.35,0xe0524a,[0,0,0]);group.add(nuc);
+  const names=['K','L','M'],cols=[0x5ab0ff,0x6be08a,0xffc857];
+  d.sh.forEach((cnt,i)=>{
+    const r=.9+i*.8,sub=new THREE.Group();sub.rotation.set(i*.5,i*.4,i*.3);
+    sub.add(new THREE.Mesh(new THREE.TorusGeometry(r,.012,8,80),mat(0x889995)));
+    for(let e=0;e<cnt;e++){const m=sph(.1,cols[i],[0,0,0],{emissive:cols[i],emissiveIntensity:.3});sub.add(m);anim.push({m,r,a:e/cnt*Math.PI*2,s:.012/(1+i*.4)})}
+    group.add(sub);addLabel(names[i]+' shell ('+cnt+'e⁻)',[r*Math.cos(i*.4),0,0],`<span class="tag">Class 9–12 · Atomic Structure</span><h2>${names[i]} shell</h2><p>${cnt} electron(s). Maximum capacity of shell n = 2n² (K=2, L=8, M=18).</p>`);
+  });
+  const p=d.z,nn=d.a-d.z,cfg=d.sh.join(', ');
+  const html=`<span class="tag">Class 9–12 · NEET · JEE</span><h2>${d.n} (${k})</h2><p>Atomic number Z = ${p} · Mass number A = ${d.a}</p><p>Protons = ${p}, Neutrons = ${nn}, Electrons = ${p}. Shell configuration: ${cfg}.</p>`;
+  addLabel('Nucleus',[0,.35,0],html);showInfo(html)}
+
+/* ---------- MOLECULES (Chemistry) ---------- */
+const COL={H:0xf2f2f2,O:0xe0524a,C:0x4a4f55,N:0x4a7bff};const RAD={H:.3,O:.46,C:.44,N:.44};
+const t=.63;
+const MOLS={
+ water:{n:'Water',f:'H₂O',at:[['O',0,0,0],['H',.76,-.59,0],['H',-.76,-.59,0]],bd:[[0,1,1],[0,2,1]],i:'Bent shape · bond angle 104.5° · sp³ (2 lone pairs on O) · polar, H-bonding.'},
+ methane:{n:'Methane',f:'CH₄',at:[['C',0,0,0],['H',t,t,t],['H',-t,-t,t],['H',-t,t,-t],['H',t,-t,-t]],bd:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],i:'Tetrahedral · bond angle 109.5° · sp³ hybridisation · non-polar.'},
+ co2:{n:'Carbon dioxide',f:'CO₂',at:[['C',0,0,0],['O',-1.16,0,0],['O',1.16,0,0]],bd:[[0,1,2],[0,2,2]],i:'Linear · bond angle 180° · sp hybridisation · two C=O double bonds · non-polar overall.'},
+ ammonia:{n:'Ammonia',f:'NH₃',at:[['N',0,.3,0],['H',.85,-.15,0],['H',-.42,-.15,.74],['H',-.42,-.15,-.74]],bd:[[0,1,1],[0,2,1],[0,3,1]],i:'Trigonal pyramidal · bond angle ≈107° · sp³ (1 lone pair on N) · polar.'}};
+function buildMol(k){
+  clearAll();const m=MOLS[k];
+  m.at.forEach(a=>{group.add(sph(RAD[a[0]],COL[a[0]],[a[1],a[2],a[3]]));addLabel(a[0],[a[1],a[2]+RAD[a[0]],a[3]],null)});
+  m.bd.forEach(b=>{const A=m.at[b[0]],B=m.at[b[1]];group.add(bond([A[1],A[2],A[3]],[B[1],B[2],B[3]],b[2]))});
+  const html=`<span class="tag">Class 11–12 · NEET · JEE · Chemical Bonding</span><h2>${m.n} (${m.f})</h2><p>${m.i}</p>`;
+  labels.forEach(l=>l.el.onclick=e=>{e.stopPropagation();showInfo(html)});showInfo(html)}
+
+/* ---------- ANIMAL CELL (Biology) ---------- */
+function buildCell(){
+  clearAll();
+  group.add(new THREE.Mesh(new THREE.SphereGeometry(2.2,40,28),mat(0x7fd1c0,{transparent:true,opacity:.14,depthWrite:false})));
+  const O=[];
+  const nuc=sph(.75,0x6b5bd6,[.2,.2,0]);group.add(nuc);group.add(sph(.22,0x2c2370,[.35,.35,.5]));
+  O.push(['Nucleus',[.2,.95,0],'Controls the cell and stores DNA. Surrounded by a double nuclear envelope with pores. Nucleolus makes rRNA.']);
+  [[-1.2,-.6,.6,.3],[1.3,-.8,-.3,-.4]].forEach(p=>{const m=sph(.4,0xf08a3c,[p[0],p[1],p[2]]);m.scale.set(1.6,.8,.8);m.rotation.z=p[3];group.add(m)});
+  O.push(['Mitochondrion',[-1.2,-.1,.6],'"Powerhouse of the cell." Site of Krebs cycle and oxidative phosphorylation – makes ATP. Has its own circular DNA and 70S ribosomes.']);
+  const er=new THREE.Mesh(new THREE.TorusKnotGeometry(.35,.08,80,8,2,3),mat(0x4aa3e8));er.position.set(1,.9,.6);group.add(er);
+  O.push(['Endoplasmic reticulum',[1,1.4,.6],'Network of membranes. Rough ER (with ribosomes) makes proteins; smooth ER makes lipids and detoxifies.']);
+  for(let i=0;i<4;i++){const g=new THREE.Mesh(new THREE.TorusGeometry(.45-i*.04,.06,8,30),mat(0xe8c13a));g.rotation.x=Math.PI/2;g.position.set(-1,.9+i*.17,.2);g.scale.set(1,1,.5);group.add(g)}
+  O.push(['Golgi apparatus',[-1,1.75,.2],'Stack of flattened sacs (cisternae). Modifies, sorts and packages proteins and lipids for secretion.']);
+  group.add(sph(.2,0xd94f8c,[.6,-1.2,.9]));
+  O.push(['Lysosome',[.6,-1.0,.9],'"Suicide bag." Membrane-bound sac of hydrolytic enzymes that digest worn-out organelles and foreign matter.']);
+  for(let i=0;i<30;i++){const a=Math.random()*6.28,b=Math.acos(2*Math.random()-1),r=1.0+Math.random()*1;group.add(sph(.05,0x333333,[r*Math.sin(b)*Math.cos(a),r*Math.sin(b)*Math.sin(a),r*Math.cos(b)]))}
+  O.push(['Ribosome',[0,-1.7,.4],'Tiny RNA–protein particles (80S in eukaryotes) that carry out protein synthesis (translation).']);
+  O.push(['Cell membrane',[1.6,0,1.5],'Fluid mosaic model (Singer & Nicolson). Selectively permeable phospholipid bilayer with proteins and cholesterol.']);
+  O.forEach(o=>addLabel(o[0],o[1],`<span class="tag">Class 9–11 · NEET · Cell Biology</span><h2>${o[0]}</h2><p>${o[2]}</p>`));
+  showInfo('<span class="tag">Class 9–11 · NEET</span><h2>Animal cell</h2><p>Drag to rotate, pinch/scroll to zoom. Tap any label to learn its function.</p>')}
+
+/* ---------- UI ---------- */
+const SUBJ={'Chemistry · Atom':{list:Object.keys(ATOMS).map(k=>[k,ATOMS[k].n]),fn:buildAtom},'Chemistry · Molecule':{list:Object.keys(MOLS).map(k=>[k,MOLS[k].n]),fn:buildMol},'Biology · Cell':{list:[['cell','Animal cell']],fn:buildCell}};
+const subjEl=document.getElementById('subj'),itemsEl=document.getElementById('items');
+function pickSubj(s){
+  [...subjEl.children].forEach(b=>b.classList.toggle('on',b.textContent===s));
+  itemsEl.innerHTML='';const S=SUBJ[s];
+  S.list.forEach((it,i)=>{const b=document.createElement('button');b.textContent=it[1];b.onclick=()=>{[...itemsEl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');S.fn(it[0])};itemsEl.appendChild(b);if(i==0)b.click()})}
+Object.keys(SUBJ).forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>pickSubj(s);subjEl.appendChild(b)});
+document.getElementById('bLab').onclick=e=>{showLab=!showLab;e.target.classList.toggle('on',showLab)};
+document.getElementById('bRot').onclick=e=>{autoRot=!autoRot;e.target.classList.toggle('on',autoRot)};
+
+/* ---------- controls: drag rotate, wheel + pinch zoom ---------- */
+const ptr=new Map();let pinch=0;
+stage.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,[e.clientX,e.clientY]);pinch=0});
+stage.addEventListener('pointerup',e=>ptr.delete(e.pointerId));
+stage.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
+stage.addEventListener('pointermove',e=>{
+  if(!ptr.has(e.pointerId))return;const p=ptr.get(e.pointerId);
+  if(ptr.size==1){group.rotation.y+=(e.clientX-p[0])*.01;group.rotation.x+=(e.clientY-p[1])*.01}
+  ptr.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptr.size==2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoom=Math.min(14,Math.max(3,zoom*pinch/d));pinch=d}});
+stage.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(14,Math.max(3,zoom+e.deltaY*.005))},{passive:false});
+
+/* ---------- loop ---------- */
+const v=new THREE.Vector3();
+function loop(){
+  requestAnimationFrame(loop);
+  if(autoRot&&!ptr.size)group.rotation.y+=.004;
+  anim.forEach(o=>{o.a+=o.s;o.m.position.set(Math.cos(o.a)*o.r,Math.sin(o.a)*o.r,0)});
+  camera.position.z=zoom;
+  group.updateMatrixWorld(true);
+  const w=stage.clientWidth,h=stage.clientHeight;
+  labels.forEach(l=>{v.copy(l.pos);group.localToWorld(v);v.project(camera);
+    l.el.style.display=showLab?'block':'none';
+    l.el.style.left=((v.x+1)/2*w)+'px';l.el.style.top=((1-v.y)/2*h)+'px'});
+  renderer.render(scene,camera)}
+resize();pickSubj('Chemistry · Atom');loop();
+</script>
+</body>
+</html>

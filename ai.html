@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sci Diagrams">
+<meta name="theme-color" content="#0f8f78">
+<title>AI Science Diagrams</title>
+<style>
+:root{--bg:#eef3f1;--fg:#12302b;--card:#fff;--mut:#51706a;--ac:#0f8f78;--bd:#cfdcd8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d}}
+:root[data-theme="dark"]{--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;padding:14px;max-width:760px;margin-inline:auto}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+button,select,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 12px}
+button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac)}
+button.go{background:var(--ac);color:#04231d;font-weight:700;border-color:var(--ac)}
+button:disabled{opacity:.6}
+input{flex:1;min-width:0;width:100%}
+.chip{border-radius:999px;font-size:13px;padding:6px 11px}
+#out{margin-top:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.card img{width:100%;height:auto;display:block;border-radius:8px;background:#fff}
+.card h2{font-size:16px;margin:0 0 8px}
+.part{padding:7px 0;border-top:1px solid var(--bd);font-size:14px;line-height:1.5}
+.part b{color:var(--ac)}
+.msg{color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+<h1>AI Science Diagrams</h1>
+<p class="sub">Kisi bhi topic ka labelled diagram AI se banwayein: Class 6–12, NEET, JEE, Social Science.</p>
+<div class="row">
+<select id="lvl" aria-label="Level"><option>Class 9–10</option><option>Class 11–12</option><option>NEET</option><option>JEE</option><option>Class 6–8</option></select>
+<select id="lang" aria-label="Language"><option>Hinglish</option><option>English</option><option>Hindi</option></select>
+</div>
+<div class="row"><input id="q" placeholder="Jaise: human heart, convex lens ray diagram, benzene..." aria-label="Topic"></div>
+<div class="row"><button class="go" id="go">Diagram banao</button><button id="ks">API key</button><button id="dl" hidden></button></div>
+<div class="row" id="chips"></div>
+<div id="out"><p class="msg">Topic likhein ya neeche se chunein, phir "Diagram banao" dabayein.</p></div>
+
+<script>
+const $=id=>document.getElementById(id);
+['Human heart','Convex lens ray diagram','Benzene structure','Neuron','Series & parallel circuit','Water cycle','Plant cell','Mendel monohybrid cross','Indian monsoon winds'].forEach(t=>{
+  const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('q').value=t;run()};$('chips').appendChild(b)});
+$('go').onclick=run;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+
+let lastSvg='',lastTitle='diagram';
+const KEY='sci_key';const getKey=()=>localStorage.getItem(KEY)||'';
+async function ask(prompt){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,messages:[{role:'user',content:prompt}]})});
+  const d=await r.json();if(!r.ok)throw{code:r.status,message:d.error&&d.error.message};
+  return{text:d.content.map(c=>c.text||'').join('')}}
+function keyUI(){
+  $('out').innerHTML='<div class="card"><h2>API key</h2><p class="msg">console.anthropic.com par API key banayein aur yahan paste karein. Key sirf is phone mein save hoti hai.</p><input id="kin" type="password" placeholder="sk-ant-..." autocomplete="off"><div class="row" style="margin-top:8px"><button class="go" id="ksv">Save</button></div></div>';
+  $('ksv').onclick=()=>{const v=$('kin').value.trim();if(v){localStorage.setItem(KEY,v);$('out').innerHTML='<p class="msg">Key save ho gayi. Ab topic likhein.</p>'}}}
+$('ks').onclick=keyUI;
+
+const SYS=`You are a science diagram generator for Indian students (NCERT/CBSE, NEET, JEE). Make an ACCURATE, clean, labelled 2D diagram as SVG.
+Rules: label ALL parts AND sub-parts in the diagram (number them 1,2,3… on the diagram if space is tight, with the numbered key drawn beside it); viewBox="0 0 800 700"; first element a white <rect> background; dark strokes (#222), soft pastel fills; font-family Arial, font-size 15-18 for labels; label lines (leader lines) from each part to text placed in margins so nothing overlaps; no scripts, no images, no external references; title text at top. Be scientifically correct; if unsure about a detail keep the diagram simpler rather than wrong.
+Output EXACTLY in this format and nothing else:
+===TITLE===
+short title
+===SVG===
+<svg ...>...</svg>
+===PARTS===
+List EVERY part and sub-part shown in the diagram (complete, as in NCERT; do not skip any). Main parts as: Part name | function or key fact
+Sub-parts directly under their main part, each on its own line starting with "- ": - Sub-part name | function or key fact
+Sub-parts of sub-parts start with "-- ". Every label drawn in the SVG must appear here, and every part here must be labelled in the SVG.
+===TIP===
+one exam tip or common mistake`;
+
+async function run(){
+  const topic=$('q').value.trim();if(!topic)return;
+  if(!getKey()){keyUI();return}
+  $('go').disabled=true;$('dl').hidden=true;$('out').innerHTML='<p class="msg">Diagram ban raha hai… (10–40 sec)</p>';
+  try{
+    const r=await ask(SYS+`\n\nTopic: ${topic}\nLevel: ${$('lvl').value}\nWrite the notes in ${$('lang').value}. Diagram labels stay in English (standard terms).`);
+    render(r.text)
+  }catch(e){
+    $('out').innerHTML='<p class="msg">'+(e&&e.code===401?'API key galat hai. "API key" dabakar dobara daalein.':e&&e.code===429?'Thoda ruk kar dobara try karein.':'Diagram nahi ban paya (internet/key check karein). Dobara try karein.')+'</p>'
+  }
+  $('go').disabled=false}
+
+function sec(t,n){const m=t.match(new RegExp('==='+n+'===\\s*([\\s\\S]*?)(?====[A-Z]+===|$)'));return m?m[1].trim():''}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function render(t){
+  let svg=sec(t,'SVG');const i=svg.indexOf('<svg'),j=svg.lastIndexOf('</svg>');
+  if(i<0||j<0){$('out').innerHTML='<p class="msg">Diagram format sahi nahi aaya. Dobara try karein.</p>';return}
+  svg=svg.slice(i,j+6).replace(/<script[\s\S]*?<\/script>/gi,'').replace(/\son\w+="[^"]*"/gi,'');
+  if(!/xmlns=/.test(svg))svg=svg.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+  lastSvg=svg;lastTitle=sec(t,'TITLE')||'diagram';
+  const src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  const parts=sec(t,'PARTS').split('\n').filter(x=>x.includes('|')).map(l=>{
+    const lv=(l.trim().match(/^-+/)||[''])[0].length;
+    const [a,...b]=l.trim().replace(/^-+\s*/,'').split('|');
+    return `<div class="part" style="margin-left:${lv*16}px;${lv?'border-top:none;padding:3px 0;border-left:2px solid var(--bd);padding-left:8px':''}">${lv?'':''}<b>${esc(a.trim())}</b> – ${esc(b.join('|').trim())}</div>`}).join('');
+  $('out').innerHTML=`<div class="card"><h2>${esc(lastTitle)}</h2><img alt="${esc(lastTitle)}" src="${src}"></div>`+
+    (parts?`<div class="card"><h2>Parts</h2>${parts}</div>`:'')+
+    (sec(t,'TIP')?`<div class="card"><h2>Exam tip</h2><div class="msg">${esc(sec(t,'TIP'))}</div></div>`:'');
+}
+
+</script>
+</body>
+</html>
