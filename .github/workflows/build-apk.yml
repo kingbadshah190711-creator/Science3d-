@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Find project folder
         run: echo "PROJECT_DIR=$(dirname $(find . -name package.json -not -path '*/node_modules/*' | head -1))" >> $GITHUB_ENV
-      - name: Prepare www
+      - name: Prepare www and config
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           mkdir -p www
@@ -19,6 +19,7 @@ jobs:
           done
           ls www
           test -f www/index.html || (echo "HTML files missing in repository" && exit 1)
+          echo '{"appId":"com.science3d.app","appName":"Science3D","webDir":"www","android":{"backgroundColor":"#0d1b19"},"plugins":{"CapacitorHttp":{"enabled":true}}}' > capacitor.config.json
       - uses: actions/setup-node@v4
         with:
           node-version: 20
