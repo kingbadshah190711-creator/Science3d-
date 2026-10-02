@@ -278,15 +278,47 @@ function showPT(){
     pt.addEventListener('pointerdown',e=>e.stopPropagation());pt.addEventListener('wheel',e=>e.stopPropagation())}
   showInfo('<span class="tag">Periodic table</span><h2>108 elements</h2><p>Kisi element par tap karein. Poori table dekhne ke liye scroll karein.</p>')}
 
+/* ---------- COMPOUND SEARCH (PubChem, free, no key) ---------- */
+let curSubj='';const CSUB='Chemistry · Compound Search';
+const SUG=['Glucose','Fructose','Sucrose','Aspirin','Paracetamol','Ibuprofen','Caffeine','Nicotine','Morphine','Cisplatin','Ethanol','Methanol','Acetone','Formaldehyde','Acetic acid','Chloroform','Benzene','Toluene','Phenol','Aniline','Naphthalene','Urea','Glycine','Alanine','Cysteine','Adenine','Guanine','Cytosine','Thymine','Uracil','ATP','Cholesterol','Testosterone','Estradiol','Dopamine','Serotonin','Adrenaline','Vitamin C','Sulfuric acid','Nitric acid','Hydrogen peroxide','Ozone','Buckminsterfullerene'];
+const CPK={H:0xf2f2f2,C:0x4a4f55,N:0x4a7bff,O:0xe0524a,S:0xffd23f,P:0xff9f1a,Cl:0x39c24a,F:0x7ee07e,Br:0xa52a2a,I:0x7b3fa0,Na:0xab5cf2,K:0x8f40d4,Ca:0x3dff00,Mg:0x8aff00,Fe:0xe06633,Zn:0x7d80b0,Cu:0xc88033,B:0xe8a0a0,Si:0xf0c8a0};
+const RADS={H:.3,C:.44,N:.44,O:.46,F:.4};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function parseSDF(t){const L=t.split('\n'),na=+L[3].slice(0,3),nb=+L[3].slice(3,6);if(!(na>0))throw 0;
+  const at=[],bd=[];for(let i=0;i<na;i++){const p=L[4+i].trim().split(/\s+/);at.push([p[3],+p[0],+p[1],+p[2]])}
+  for(let i=0;i<nb;i++){const l=L[4+na+i];bd.push([+l.slice(0,3)-1,+l.slice(3,6)-1,+l.slice(6,9)])}return{at,bd}}
+async function searchCompound(q){
+  clearAll();showInfo('<p>'+esc(q)+' load ho raha hai…</p>');
+  const P='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/';
+  const load=async base=>{let dim='3D',r=await fetch(base+'/SDF?record_type=3d');if(!r.ok){dim='2D';r=await fetch(base+'/SDF?record_type=2d')}
+    if(!r.ok)return false;const m=parseSDF(await r.text());let pr={};
+    try{pr=(await(await fetch(base+'/property/MolecularFormula,MolecularWeight,IUPACName/JSON')).json()).PropertyTable.Properties[0]}catch(e){}
+    buildCompound(q,m,pr,dim);return true};
+  try{
+    if(await load(P+'name/'+encodeURIComponent(q)))return;
+    if(/^([A-Z][a-z]?\d*)+$/.test(q)){const c=(await(await fetch(P+'fastformula/'+q+'/cids/JSON?MaxRecords=1')).json()).IdentifierList.CID[0];if(await load(P+'cid/'+c))return}
+    throw 0}
+  catch(e){showInfo('<h2>Nahi mila</h2><p>Naam (English), formula (jaise C6H12O6) ya CAS number likhein, aur internet on rakhein.</p>')}}
+function buildCompound(q,m,pr,dim){
+  clearAll();const n=m.at.length,c=m.at.reduce((a,p)=>[a[0]+p[1],a[1]+p[2],a[2]+p[3]],[0,0,0]).map(v=>v/n),geo={};let R=0;
+  const pos=m.at.map(p=>[p[1]-c[0],p[2]-c[1],p[3]-c[2]]);
+  m.at.forEach((p,i)=>{const r=RADS[p[0]]||.5,col=CPK[p[0]]||0x9aa7a4;R=Math.max(R,Math.hypot(...pos[i])+r);
+    const g=geo[r]||(geo[r]=new THREE.SphereGeometry(r,n>80?10:24,n>80?8:18)),mesh=new THREE.Mesh(g,mat(col));mesh.position.set(...pos[i]);group.add(mesh);
+    if(n<=30&&p[0]!=='H')addLabel(p[0],[pos[i][0],pos[i][1]+r,pos[i][2]],null)});
+  m.bd.forEach(b=>group.add(bond(pos[b[0]],pos[b[1]],Math.min(b[2],3))));
+  zoom=Math.min(40,Math.max(7,R*2.6+1.5));
+  showInfo(`<span class="tag">PubChem (NIH) · ${dim} structure</span><h2>${esc(q)}</h2><p>Formula: ${esc(pr.MolecularFormula||'-')} · Mol. weight: ${esc(pr.MolecularWeight||'-')} g/mol</p><p>${esc(pr.IUPACName||'')}</p><p>${n} atoms · ${m.bd.length} bonds${dim=='2D'?' (flat 2D layout, hydrogens not shown)':''}</p>`)}
+
 /* ---------- UI ---------- */
-const SUBJ={'Chemistry · Periodic Table':{list:[['pt','Periodic table']],fn:showPT},'Chemistry · Atom':{list:Object.keys(ATOMS).map(k=>[k,ATOMS[k].z+' '+k+' · '+ATOMS[k].n]),fn:buildAtom},'Chemistry · Molecule':{list:Object.keys(MOLS).map(k=>[k,MOLS[k].n]),fn:buildMol},'Biology · Cell':{list:[['cell','Animal cell'],['plant','Plant cell']],fn:k=>buildCell(k=='plant')},'Biology · Inside':{list:Object.keys(ORG).map(k=>[k,ORG[k].n]),fn:buildOrg}};
+const SUBJ={'Chemistry · Periodic Table':{list:[['pt','Periodic table']],fn:showPT},'Chemistry · Atom':{list:Object.keys(ATOMS).map(k=>[k,ATOMS[k].z+' '+k+' · '+ATOMS[k].n]),fn:buildAtom},'Chemistry · Compound Search':{list:SUG.map(n=>[n,n]),fn:searchCompound},'Chemistry · Molecule':{list:Object.keys(MOLS).map(k=>[k,MOLS[k].n]),fn:buildMol},'Biology · Cell':{list:[['cell','Animal cell'],['plant','Plant cell']],fn:k=>buildCell(k=='plant')},'Biology · Inside':{list:Object.keys(ORG).map(k=>[k,ORG[k].n]),fn:buildOrg}};
 const subjEl=document.getElementById('subj'),itemsEl=document.getElementById('items');
 function pickSubj(s){
   [...subjEl.children].forEach(b=>b.classList.toggle('on',b.textContent===s));
-  itemsEl.innerHTML='';document.getElementById('sr').value='';const S=SUBJ[s];
+  itemsEl.innerHTML='';curSubj=s;document.getElementById('sr').value='';document.getElementById('sr').placeholder=s==CSUB?'Naam, formula (C6H12O6) ya CAS likho, Enter dabao…':'Search atom / molecule…';const S=SUBJ[s];
   S.list.forEach((it,i)=>{const b=document.createElement('button');b.textContent=it[1];b.dataset.k=it[0];b.onclick=()=>{[...itemsEl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');S.fn(it[0])};itemsEl.appendChild(b);if(i==0)b.click()})}
 Object.keys(SUBJ).forEach(s=>{const b=document.createElement('button');b.textContent=s;b.onclick=()=>pickSubj(s);subjEl.appendChild(b)});
 document.getElementById('sr').oninput=e=>{const q=e.target.value.toLowerCase();[...itemsEl.children].forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'':'none')};
+document.getElementById('sr').onkeydown=e=>{if(e.key==='Enter'&&curSubj==CSUB){e.preventDefault();const q=e.target.value.trim();if(q)searchCompound(q)}};
 document.getElementById('bLab').onclick=e=>{showLab=!showLab;e.target.classList.toggle('on',showLab)};
 document.getElementById('bRot').onclick=e=>{autoRot=!autoRot;e.target.classList.toggle('on',autoRot)};
 
@@ -299,8 +331,8 @@ stage.addEventListener('pointermove',e=>{
   if(!ptr.has(e.pointerId))return;const p=ptr.get(e.pointerId);
   if(ptr.size==1){group.rotation.y+=(e.clientX-p[0])*.01;group.rotation.x+=(e.clientY-p[1])*.01}
   ptr.set(e.pointerId,[e.clientX,e.clientY]);
-  if(ptr.size==2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoom=Math.min(14,Math.max(3,zoom*pinch/d));pinch=d}});
-stage.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(14,Math.max(3,zoom+e.deltaY*.005))},{passive:false});
+  if(ptr.size==2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoom=Math.min(60,Math.max(3,zoom*pinch/d));pinch=d}});
+stage.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(60,Math.max(3,zoom+e.deltaY*.005))},{passive:false});
 
 /* ---------- loop ---------- */
 const v=new THREE.Vector3();

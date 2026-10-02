@@ -30,38 +30,49 @@ input{flex:1;min-width:0;width:100%}
 .part{padding:7px 0;border-top:1px solid var(--bd);font-size:14px;line-height:1.5}
 .part b{color:var(--ac)}
 .msg{color:var(--mut);font-size:14px}
-</style>
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin-bottom:6px;padding:7px 10px}summary{cursor:pointer;font-size:14px;font-weight:700}.wrap{flex-wrap:wrap;margin-top:8px;margin-bottom:2px}#subj{overflow-x:auto;flex-wrap:nowrap}</style>
 </head>
 <body>
 <h1>AI Science Diagrams</h1>
-<p class="sub">Kisi bhi topic ka labelled diagram AI se banwayein: Class 6–12, NEET, JEE, Social Science.</p>
+<p class="sub">Free AI (bina key). Kabhi-kabhi slow ya galat ho sakta hai, isliye NCERT se mila lein. Ek diagram ke baad ~15 sec ruk kar agla banayein.</p>
 <div class="row">
 <select id="lvl" aria-label="Level"><option>Class 9–10</option><option>Class 11–12</option><option>NEET</option><option>JEE</option><option>Class 6–8</option></select>
 <select id="lang" aria-label="Language"><option>Hinglish</option><option>English</option><option>Hindi</option></select>
 </div>
-<div class="row"><input id="q" placeholder="Jaise: human heart, convex lens ray diagram, benzene..." aria-label="Topic"></div>
-<div class="row"><button class="go" id="go">Diagram banao</button><button id="ks">API key</button><button id="dl" hidden></button></div>
-<div class="row" id="chips"></div>
+<div class="row"><input id="q" placeholder="Topic dhoondhein ya naya likhein…" aria-label="Topic"></div>
+<div class="row"><button class="go" id="go">Diagram banao</button><button id="dl" hidden></button></div>
+<div class="row" id="subj"></div><div id="chips"></div>
 <div id="out"><p class="msg">Topic likhein ya neeche se chunein, phir "Diagram banao" dabayein.</p></div>
 
 <script>
 const $=id=>document.getElementById(id);
-['Human heart','Convex lens ray diagram','Benzene structure','Neuron','Series & parallel circuit','Water cycle','Plant cell','Mendel monohybrid cross','Indian monsoon winds'].forEach(t=>{
-  const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('q').value=t;run()};$('chips').appendChild(b)});
+const TOP={"Biology": {"Cell": "Animal cell|Plant cell|Prokaryotic cell|Nucleus|Mitochondrion|Chloroplast|Golgi apparatus|Endoplasmic reticulum|Fluid mosaic model|Ribosome|Lysosome", "Cell division": "Cell cycle|Mitosis stages|Meiosis I stages|Meiosis II stages|Crossing over|Chromosome structure|Nucleosome|Karyotype", "Genetics": "DNA double helix|DNA replication fork|Transcription|Translation|Genetic code table|Lac operon|Monohybrid cross|Dihybrid cross|Test cross|Incomplete dominance|Sex determination|Pedigree analysis|Sickle cell inheritance|Hardy-Weinberg graph", "Human physiology": "Human heart|Double circulation|ECG wave|Blood vessels|Human brain|Neuron|Synapse|Reflex arc|Human eye|Human ear|Human kidney|Nephron|Urine formation|Human digestive system|Villi|Human respiratory system|Alveoli gas exchange|Human skin|Muscle sarcomere|Sliding filament theory|Endocrine glands|Hormone feedback loop|Antibody structure|Blood cells|Lymphatic system|Human skeleton|Types of joints", "Human reproduction": "Male reproductive system|Female reproductive system|Menstrual cycle|Spermatogenesis|Oogenesis|Fertilisation and implantation|Placenta|Embryonic development|Mammary gland", "Plant anatomy": "Dicot root T.S.|Monocot root T.S.|Dicot stem T.S.|Monocot stem T.S.|Leaf T.S.|Stomata|Xylem and phloem|Secondary growth|Root nodule", "Plant reproduction": "Flower parts|Anther structure|Ovule structure|Embryo sac|Double fertilisation|Dicot seed|Monocot seed|Seed germination|Types of pollination", "Plant physiology": "Photosynthesis Z-scheme|Calvin cycle|C4 pathway|Glycolysis|Krebs cycle|Electron transport chain|Transpiration pull|Translocation in phloem|Nitrogen cycle|Plant hormones", "Microbes and animals": "Amoeba|Paramecium|Euglena|Hydra|Earthworm|Cockroach|Frog|Bacteriophage|HIV structure|Bacteria shapes|Yeast budding|Malaria parasite life cycle|Fungal structure", "Ecology and evolution": "Food chain|Food web|Ecological pyramids|Carbon cycle|Water cycle|Phosphorus cycle|Ecological succession|Homologous and analogous organs|Phylogenetic tree|Natural selection|Population growth curves", "Biotechnology": "PCR|Gel electrophoresis|Recombinant DNA technology|Plasmid pBR322|Bioreactor|Sewage treatment|Biogas plant|Insulin production|Tissue culture|Gene gun|CRISPR-Cas9"}, "Physics": {"Mechanics": "Free body diagram|Projectile motion|Inclined plane|Pulley system|Banked road|Circular motion|Simple pendulum|Spring-mass SHM|Torque and lever|Centre of mass|Satellite orbit|Kepler laws|Collisions|Velocity-time graph|Stress-strain curve", "Fluids and heat": "Pascal's law|Bernoulli principle|Venturi meter|Terminal velocity|Capillary rise|Surface tension|Heat engine|Carnot cycle|PV diagram|Calorimetry graph|Black body radiation curve|Thermal expansion|Convection currents", "Waves and sound": "Transverse and longitudinal waves|Standing waves in a string|Organ pipes|Doppler effect|Beats|Huygens principle|Young double slit|Single slit diffraction|Polarisation|Sound echo|Ultrasound SONAR", "Optics": "Convex lens ray diagram|Concave lens ray diagram|Concave mirror ray diagram|Convex mirror ray diagram|Refraction through glass slab|Prism dispersion|Total internal reflection|Optical fibre|Eye defects and correction|Compound microscope|Astronomical telescope|Rainbow formation|Mirage", "Electricity": "Series and parallel circuit|Wheatstone bridge|Potentiometer|Meter bridge|Ohm law graph|Kirchhoff laws|Electric field lines|Electric dipole field|Gauss law|Capacitor|Dielectric in capacitor|Domestic wiring|Fuse and MCB", "Magnetism and EMI": "Bar magnet field lines|Solenoid field|Oersted experiment|Biot-Savart law|Cyclotron|Moving coil galvanometer|Electric motor|AC generator|Transformer|Faraday induction|Lenz law|LC oscillation|LCR phasor diagram|Hysteresis loop|Earth magnetism", "Modern physics": "Photoelectric effect setup|Bohr model|Hydrogen spectrum series|Rutherford scattering|Binding energy curve|Radioactive decay curve|Nuclear fission|Nuclear fusion|De Broglie wavelength|Davisson-Germer experiment|X-ray tube|EM spectrum", "Electronics": "p-n junction|Diode characteristics|Half-wave rectifier|Full-wave rectifier|Zener diode|Transistor CE configuration|Logic gates|Energy bands|Amplifier circuit|Oscillator"}, "Chemistry": {"Atomic structure": "Rutherford model|Bohr model of atom|Shapes of orbitals|Aufbau principle|Hund rule|Quantum numbers|Hydrogen emission spectrum|Periodic trends", "Bonding": "Hybridisation sp sp2 sp3|VSEPR shapes|Molecular orbital diagram O2|Molecular orbital diagram N2|NaCl ionic lattice|Metallic bonding|Hydrogen bonding in water|Born-Haber cycle|Dipole moment", "Solid state and solutions": "Simple cubic cell|BCC unit cell|FCC unit cell|HCP and CCP packing|Tetrahedral and octahedral voids|Schottky and Frenkel defects|Raoult law graphs|Osmosis|Reverse osmosis", "Thermo and kinetics": "Energy profile diagram|Maxwell distribution|Phase diagram of water|Hess law cycle|Enthalpy diagram|Rate vs concentration graph|Arrhenius plot|Le Chatelier principle|Catalyst effect", "Electrochemistry": "Daniell cell|Electrolysis of water|Standard hydrogen electrode|Dry cell|Lead storage battery|Fuel cell|Electrolytic refining of copper|Salt bridge|Conductivity vs concentration", "Equilibrium and surface": "Titration curve|pH scale|Buffer action|Adsorption isotherm|Colloids and Tyndall effect|Micelle formation|Soap cleansing action", "Organic": "Benzene resonance|Types of isomerism|Geometrical isomerism|Optical isomerism|SN1 mechanism|SN2 mechanism|E1 and E2|Electrophilic substitution of benzene|Aldol condensation|Hyperconjugation|Inductive effect|Ethane conformations|Cyclohexane chair and boat|Glucose open chain and ring|Peptide bond|DNA nucleotide|Polymerisation|Fischer projection|Functional groups", "Inorganic and industrial": "Blast furnace|Contact process|Haber process|Ostwald process|Hall-Heroult process|Bessemer converter|Coordination compound geometry|Crystal field splitting|Ozone layer depletion|Lab preparation of hydrogen|Lab preparation of oxygen|Lab preparation of chlorine|Kipp apparatus", "Lab techniques": "Simple distillation|Fractional distillation|Paper chromatography|Filtration|Separating funnel|Sublimation|Titration setup|Steam distillation"}, "Social Science": {"Geography - Earth": "Layers of the Earth|Plate tectonics|Rock cycle|Volcano parts|Earthquake focus and epicentre|Folds and faults|River landforms|Meander and oxbow lake|Glacial landforms|Coastal landforms|Desert landforms|Soil profile|Latitudes and longitudes|Time zones", "Geography - Atmosphere and oceans": "Layers of atmosphere|Heat budget|Pressure belts and winds|Cyclone structure|Monsoon mechanism|Ocean currents|Tides spring and neap|Water cycle|Seasons and revolution|Solar eclipse|Lunar eclipse|Phases of the Moon|Greenhouse effect", "Geography - India": "Physiographic divisions of India|Himalayan ranges|Rivers of India|Climate regions of India|Soil types of India|Natural vegetation of India|Monsoon in India|Major crop regions|Mineral distribution|Population pyramid|Demographic transition", "History": "Indus Valley city layout|Great Bath of Mohenjo-daro|Mauryan empire map|Gupta empire map|Mughal empire map|Revolt of 1857 centres|Dandi March route|Partition of India map|Freedom struggle timeline|French Revolution timeline|Industrial Revolution|World War I alliances|World War II timeline|Silk Route map|Vedic society structure", "Civics and Polity": "Structure of Indian government|Separation of powers|Parliament structure|Judiciary hierarchy|Federalism|Constitution making|Election process|Panchayati Raj|Fundamental rights", "Economics": "Circular flow of income|Demand and supply curves|Production possibility curve|Three sectors of economy|Banking system|Inflation graph|GDP components|Money flow"}};
+let curSub='All';
+function drawTopics(){
+  const q=$('q').value.trim().toLowerCase(),box=$('chips');box.innerHTML='';
+  Object.keys(TOP).forEach(sub=>{if(curSub!=='All'&&curSub!==sub)return;
+    Object.entries(TOP[sub]).forEach(([g,list])=>{
+      const items=list.split('|').filter(t=>!q||t.toLowerCase().includes(q)||g.toLowerCase().includes(q));
+      if(!items.length)return;
+      const d=document.createElement('details');if(q||curSub!=='All'&&Object.keys(TOP[sub]).length<2)d.open=true;
+      d.innerHTML='<summary>'+esc(sub)+' · '+esc(g)+' ('+items.length+')</summary>';
+      const w=document.createElement('div');w.className='row wrap';
+      items.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('q').value=t;run()};w.appendChild(b)});
+      d.appendChild(w);box.appendChild(d)})});
+  if(!box.children.length)box.innerHTML='<p class="msg">Ye topic list mein nahi hai. "Diagram banao" dabayein, AI naya topic bhi bana dega.</p>'}
+['All',...Object.keys(TOP)].forEach(s=>{const b=document.createElement('button');b.className='chip'+(s==='All'?' go':'');b.textContent=s;
+  b.onclick=()=>{curSub=s;[...$('subj').children].forEach(x=>x.classList.toggle('go',x===b));drawTopics()};$('subj').appendChild(b)});
+$('q').addEventListener('input',drawTopics);drawTopics();
 $('go').onclick=run;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
 
 let lastSvg='',lastTitle='diagram';
-const KEY='sci_key';const getKey=()=>localStorage.getItem(KEY)||'';
+const AI_URL='https://text.pollinations.ai/openai'; // free, bina key
 async function ask(prompt){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,messages:[{role:'user',content:prompt}]})});
-  const d=await r.json();if(!r.ok)throw{code:r.status,message:d.error&&d.error.message};
-  return{text:d.content.map(c=>c.text||'').join('')}}
-function keyUI(){
-  $('out').innerHTML='<div class="card"><h2>API key</h2><p class="msg">console.anthropic.com par API key banayein aur yahan paste karein. Key sirf is phone mein save hoti hai.</p><input id="kin" type="password" placeholder="sk-ant-..." autocomplete="off"><div class="row" style="margin-top:8px"><button class="go" id="ksv">Save</button></div></div>';
-  $('ksv').onclick=()=>{const v=$('kin').value.trim();if(v){localStorage.setItem(KEY,v);$('out').innerHTML='<p class="msg">Key save ho gayi. Ab topic likhein.</p>'}}}
-$('ks').onclick=keyUI;
+  const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:prompt}],private:true})});
+  if(!r.ok)throw{code:r.status};
+  const d=await r.json();return{text:d.choices[0].message.content}}
 
-const SYS=`You are a science diagram generator for Indian students (NCERT/CBSE, NEET, JEE). Make an ACCURATE, clean, labelled 2D diagram as SVG.
+const SYS=`You are a diagram generator for Indian students (science and social science; for maps draw a simple schematic outline, for history/economics use flowcharts, timelines or graphs) (NCERT/CBSE, NEET, JEE). Make an ACCURATE, clean, labelled 2D diagram as SVG.
 Rules: label ALL parts AND sub-parts in the diagram (number them 1,2,3… on the diagram if space is tight, with the numbered key drawn beside it); viewBox="0 0 800 700"; first element a white <rect> background; dark strokes (#222), soft pastel fills; font-family Arial, font-size 15-18 for labels; label lines (leader lines) from each part to text placed in margins so nothing overlaps; no scripts, no images, no external references; title text at top. Be scientifically correct; if unsure about a detail keep the diagram simpler rather than wrong.
 Output EXACTLY in this format and nothing else:
 ===TITLE===
@@ -77,13 +88,13 @@ one exam tip or common mistake`;
 
 async function run(){
   const topic=$('q').value.trim();if(!topic)return;
-  if(!getKey()){keyUI();return}
-  $('go').disabled=true;$('dl').hidden=true;$('out').innerHTML='<p class="msg">Diagram ban raha hai… (10–40 sec)</p>';
+  
+  $('go').disabled=true;$('dl').hidden=true;$('out').innerHTML='<p class="msg">Diagram ban raha hai… (10–40 sec)</p>';$('out').scrollIntoView({behavior:'smooth'});
   try{
     const r=await ask(SYS+`\n\nTopic: ${topic}\nLevel: ${$('lvl').value}\nWrite the notes in ${$('lang').value}. Diagram labels stay in English (standard terms).`);
     render(r.text)
   }catch(e){
-    $('out').innerHTML='<p class="msg">'+(e&&e.code===401?'API key galat hai. "API key" dabakar dobara daalein.':e&&e.code===429?'Thoda ruk kar dobara try karein.':'Diagram nahi ban paya (internet/key check karein). Dobara try karein.')+'</p>'
+    $('out').innerHTML='<p class="msg">'+(e&&e.code===429?'Thoda ruk kar dobara try karein.':'Diagram nahi ban paya (internet check karein). Dobara try karein.')+'</p>'
   }
   $('go').disabled=false}
 
