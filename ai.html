@@ -3,119 +3,330 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Sci Diagrams">
-<meta name="theme-color" content="#0f8f78">
-<title>AI Science Diagrams</title>
+<title>Science Diagrams</title>
 <style>
 :root{--bg:#eef3f1;--fg:#12302b;--card:#fff;--mut:#51706a;--ac:#0f8f78;--bd:#cfdcd8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d}}
 :root[data-theme="dark"]{--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;padding:14px;max-width:760px;margin-inline:auto}
-h1{font-size:20px;margin:0 0 4px}
-.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
-.row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-button,select,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 12px}
-button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac)}
-button.go{background:var(--ac);color:#04231d;font-weight:700;border-color:var(--ac)}
-button:disabled{opacity:.6}
-input{flex:1;min-width:0;width:100%}
-.chip{border-radius:999px;font-size:13px;padding:6px 11px}
-#out{margin-top:14px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;padding:14px;max-width:820px;margin-inline:auto}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:17px;margin:6px 0}
+.sub,.msg{color:var(--mut);font-size:13px;margin:0 0 10px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.row.nw{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+button,input,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 12px}
+button{cursor:pointer;white-space:nowrap}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac)}
+button.on{background:var(--ac);border-color:var(--ac);color:#04231d;font-weight:700}
+.chip{border-radius:999px;padding:6px 12px;font-size:14px}
+input{width:100%}
+#list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:8px 0 14px}
+.dc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;white-space:normal;border-radius:12px;padding:10px 12px}
+.dc span{font-size:12px;color:var(--mut)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
-.card img{width:100%;height:auto;display:block;border-radius:8px;background:#fff}
-.card h2{font-size:16px;margin:0 0 8px}
-.part{padding:7px 0;border-top:1px solid var(--bd);font-size:14px;line-height:1.5}
-.part b{color:var(--ac)}
-.msg{color:var(--mut);font-size:14px}
-details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin-bottom:6px;padding:7px 10px}summary{cursor:pointer;font-size:14px;font-weight:700}.wrap{flex-wrap:wrap;margin-top:8px;margin-bottom:2px}#subj{overflow-x:auto;flex-wrap:nowrap}</style>
+.svgw{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:12px}
+.svgw svg{display:block;width:100%;min-width:720px;height:auto}
+.part{padding:6px 0;border-top:1px solid var(--bd);font-size:14px;line-height:1.5}
+.part b{color:var(--ac)}.part.sub1{margin-left:18px;border-left:2px solid var(--bd);padding-left:8px;border-top:none}
+</style>
 </head>
 <body>
-<h1>AI Science Diagrams</h1>
-<p class="sub">Free AI (bina key). Kabhi-kabhi slow ya galat ho sakta hai, isliye NCERT se mila lein. Ek diagram ke baad ~15 sec ruk kar agla banayein.</p>
-<div class="row">
-<select id="lvl" aria-label="Level"><option>Class 9–10</option><option>Class 11–12</option><option>NEET</option><option>JEE</option><option>Class 6–8</option></select>
-<select id="lang" aria-label="Language"><option>Hinglish</option><option>English</option><option>Hindi</option></select>
+<div id="home">
+<h1>Science Diagrams</h1>
+<p class="sub">Ready-made diagrams: turant khulte hain, AI ya internet ki zaroorat nahi.</p>
+<div class="row nw" id="cls"></div>
+<div class="row nw" id="sbj"></div>
+<input id="q" placeholder="Diagram dhoondhein…" aria-label="Search diagrams" style="margin-bottom:6px">
+<div id="list"></div>
+<div class="card">
+<b>Topic list mein nahi hai?</b>
+<p class="msg">Free AI se banwayein (beta). Slow ya galat ho sakta hai, NCERT se mila lein.</p>
+<div class="row"><input id="aiq" placeholder="Topic likhein, jaise: Nephron" aria-label="AI topic"><button id="aigo" class="on">AI se banao</button></div>
 </div>
-<div class="row"><input id="q" placeholder="Topic dhoondhein ya naya likhein…" aria-label="Topic"></div>
-<div class="row"><button class="go" id="go">Diagram banao</button><button id="dl" hidden></button></div>
-<div class="row" id="subj"></div><div id="chips"></div>
-<div id="out"><p class="msg">Topic likhein ya neeche se chunein, phir "Diagram banao" dabayein.</p></div>
+</div>
+<div id="view" hidden>
+<div class="row"><button id="back">← Back</button></div>
+<h2 id="vt"></h2>
+<div class="row" id="vc"></div>
+<div class="svgw" id="vsvg"></div>
+<p class="msg" style="margin-top:6px">Chhote screen par diagram ko left-right scroll karein.</p>
+<div class="card" id="vp"></div>
+</div>
 
 <script>
 const $=id=>document.getElementById(id);
-const TOP={"Biology": {"Cell": "Animal cell|Plant cell|Prokaryotic cell|Nucleus|Mitochondrion|Chloroplast|Golgi apparatus|Endoplasmic reticulum|Fluid mosaic model|Ribosome|Lysosome", "Cell division": "Cell cycle|Mitosis stages|Meiosis I stages|Meiosis II stages|Crossing over|Chromosome structure|Nucleosome|Karyotype", "Genetics": "DNA double helix|DNA replication fork|Transcription|Translation|Genetic code table|Lac operon|Monohybrid cross|Dihybrid cross|Test cross|Incomplete dominance|Sex determination|Pedigree analysis|Sickle cell inheritance|Hardy-Weinberg graph", "Human physiology": "Human heart|Double circulation|ECG wave|Blood vessels|Human brain|Neuron|Synapse|Reflex arc|Human eye|Human ear|Human kidney|Nephron|Urine formation|Human digestive system|Villi|Human respiratory system|Alveoli gas exchange|Human skin|Muscle sarcomere|Sliding filament theory|Endocrine glands|Hormone feedback loop|Antibody structure|Blood cells|Lymphatic system|Human skeleton|Types of joints", "Human reproduction": "Male reproductive system|Female reproductive system|Menstrual cycle|Spermatogenesis|Oogenesis|Fertilisation and implantation|Placenta|Embryonic development|Mammary gland", "Plant anatomy": "Dicot root T.S.|Monocot root T.S.|Dicot stem T.S.|Monocot stem T.S.|Leaf T.S.|Stomata|Xylem and phloem|Secondary growth|Root nodule", "Plant reproduction": "Flower parts|Anther structure|Ovule structure|Embryo sac|Double fertilisation|Dicot seed|Monocot seed|Seed germination|Types of pollination", "Plant physiology": "Photosynthesis Z-scheme|Calvin cycle|C4 pathway|Glycolysis|Krebs cycle|Electron transport chain|Transpiration pull|Translocation in phloem|Nitrogen cycle|Plant hormones", "Microbes and animals": "Amoeba|Paramecium|Euglena|Hydra|Earthworm|Cockroach|Frog|Bacteriophage|HIV structure|Bacteria shapes|Yeast budding|Malaria parasite life cycle|Fungal structure", "Ecology and evolution": "Food chain|Food web|Ecological pyramids|Carbon cycle|Water cycle|Phosphorus cycle|Ecological succession|Homologous and analogous organs|Phylogenetic tree|Natural selection|Population growth curves", "Biotechnology": "PCR|Gel electrophoresis|Recombinant DNA technology|Plasmid pBR322|Bioreactor|Sewage treatment|Biogas plant|Insulin production|Tissue culture|Gene gun|CRISPR-Cas9"}, "Physics": {"Mechanics": "Free body diagram|Projectile motion|Inclined plane|Pulley system|Banked road|Circular motion|Simple pendulum|Spring-mass SHM|Torque and lever|Centre of mass|Satellite orbit|Kepler laws|Collisions|Velocity-time graph|Stress-strain curve", "Fluids and heat": "Pascal's law|Bernoulli principle|Venturi meter|Terminal velocity|Capillary rise|Surface tension|Heat engine|Carnot cycle|PV diagram|Calorimetry graph|Black body radiation curve|Thermal expansion|Convection currents", "Waves and sound": "Transverse and longitudinal waves|Standing waves in a string|Organ pipes|Doppler effect|Beats|Huygens principle|Young double slit|Single slit diffraction|Polarisation|Sound echo|Ultrasound SONAR", "Optics": "Convex lens ray diagram|Concave lens ray diagram|Concave mirror ray diagram|Convex mirror ray diagram|Refraction through glass slab|Prism dispersion|Total internal reflection|Optical fibre|Eye defects and correction|Compound microscope|Astronomical telescope|Rainbow formation|Mirage", "Electricity": "Series and parallel circuit|Wheatstone bridge|Potentiometer|Meter bridge|Ohm law graph|Kirchhoff laws|Electric field lines|Electric dipole field|Gauss law|Capacitor|Dielectric in capacitor|Domestic wiring|Fuse and MCB", "Magnetism and EMI": "Bar magnet field lines|Solenoid field|Oersted experiment|Biot-Savart law|Cyclotron|Moving coil galvanometer|Electric motor|AC generator|Transformer|Faraday induction|Lenz law|LC oscillation|LCR phasor diagram|Hysteresis loop|Earth magnetism", "Modern physics": "Photoelectric effect setup|Bohr model|Hydrogen spectrum series|Rutherford scattering|Binding energy curve|Radioactive decay curve|Nuclear fission|Nuclear fusion|De Broglie wavelength|Davisson-Germer experiment|X-ray tube|EM spectrum", "Electronics": "p-n junction|Diode characteristics|Half-wave rectifier|Full-wave rectifier|Zener diode|Transistor CE configuration|Logic gates|Energy bands|Amplifier circuit|Oscillator"}, "Chemistry": {"Atomic structure": "Rutherford model|Bohr model of atom|Shapes of orbitals|Aufbau principle|Hund rule|Quantum numbers|Hydrogen emission spectrum|Periodic trends", "Bonding": "Hybridisation sp sp2 sp3|VSEPR shapes|Molecular orbital diagram O2|Molecular orbital diagram N2|NaCl ionic lattice|Metallic bonding|Hydrogen bonding in water|Born-Haber cycle|Dipole moment", "Solid state and solutions": "Simple cubic cell|BCC unit cell|FCC unit cell|HCP and CCP packing|Tetrahedral and octahedral voids|Schottky and Frenkel defects|Raoult law graphs|Osmosis|Reverse osmosis", "Thermo and kinetics": "Energy profile diagram|Maxwell distribution|Phase diagram of water|Hess law cycle|Enthalpy diagram|Rate vs concentration graph|Arrhenius plot|Le Chatelier principle|Catalyst effect", "Electrochemistry": "Daniell cell|Electrolysis of water|Standard hydrogen electrode|Dry cell|Lead storage battery|Fuel cell|Electrolytic refining of copper|Salt bridge|Conductivity vs concentration", "Equilibrium and surface": "Titration curve|pH scale|Buffer action|Adsorption isotherm|Colloids and Tyndall effect|Micelle formation|Soap cleansing action", "Organic": "Benzene resonance|Types of isomerism|Geometrical isomerism|Optical isomerism|SN1 mechanism|SN2 mechanism|E1 and E2|Electrophilic substitution of benzene|Aldol condensation|Hyperconjugation|Inductive effect|Ethane conformations|Cyclohexane chair and boat|Glucose open chain and ring|Peptide bond|DNA nucleotide|Polymerisation|Fischer projection|Functional groups", "Inorganic and industrial": "Blast furnace|Contact process|Haber process|Ostwald process|Hall-Heroult process|Bessemer converter|Coordination compound geometry|Crystal field splitting|Ozone layer depletion|Lab preparation of hydrogen|Lab preparation of oxygen|Lab preparation of chlorine|Kipp apparatus", "Lab techniques": "Simple distillation|Fractional distillation|Paper chromatography|Filtration|Separating funnel|Sublimation|Titration setup|Steam distillation"}, "Social Science": {"Geography - Earth": "Layers of the Earth|Plate tectonics|Rock cycle|Volcano parts|Earthquake focus and epicentre|Folds and faults|River landforms|Meander and oxbow lake|Glacial landforms|Coastal landforms|Desert landforms|Soil profile|Latitudes and longitudes|Time zones", "Geography - Atmosphere and oceans": "Layers of atmosphere|Heat budget|Pressure belts and winds|Cyclone structure|Monsoon mechanism|Ocean currents|Tides spring and neap|Water cycle|Seasons and revolution|Solar eclipse|Lunar eclipse|Phases of the Moon|Greenhouse effect", "Geography - India": "Physiographic divisions of India|Himalayan ranges|Rivers of India|Climate regions of India|Soil types of India|Natural vegetation of India|Monsoon in India|Major crop regions|Mineral distribution|Population pyramid|Demographic transition", "History": "Indus Valley city layout|Great Bath of Mohenjo-daro|Mauryan empire map|Gupta empire map|Mughal empire map|Revolt of 1857 centres|Dandi March route|Partition of India map|Freedom struggle timeline|French Revolution timeline|Industrial Revolution|World War I alliances|World War II timeline|Silk Route map|Vedic society structure", "Civics and Polity": "Structure of Indian government|Separation of powers|Parliament structure|Judiciary hierarchy|Federalism|Constitution making|Election process|Panchayati Raj|Fundamental rights", "Economics": "Circular flow of income|Demand and supply curves|Production possibility curve|Three sectors of economy|Banking system|Inflation graph|GDP components|Money flow"}};
-let curSub='All';
-function drawTopics(){
-  const q=$('q').value.trim().toLowerCase(),box=$('chips');box.innerHTML='';
-  Object.keys(TOP).forEach(sub=>{if(curSub!=='All'&&curSub!==sub)return;
-    Object.entries(TOP[sub]).forEach(([g,list])=>{
-      const items=list.split('|').filter(t=>!q||t.toLowerCase().includes(q)||g.toLowerCase().includes(q));
-      if(!items.length)return;
-      const d=document.createElement('details');if(q||curSub!=='All'&&Object.keys(TOP[sub]).length<2)d.open=true;
-      d.innerHTML='<summary>'+esc(sub)+' · '+esc(g)+' ('+items.length+')</summary>';
-      const w=document.createElement('div');w.className='row wrap';
-      items.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('q').value=t;run()};w.appendChild(b)});
-      d.appendChild(w);box.appendChild(d)})});
-  if(!box.children.length)box.innerHTML='<p class="msg">Ye topic list mein nahi hai. "Diagram banao" dabayein, AI naya topic bhi bana dega.</p>'}
-['All',...Object.keys(TOP)].forEach(s=>{const b=document.createElement('button');b.className='chip'+(s==='All'?' go':'');b.textContent=s;
-  b.onclick=()=>{curSub=s;[...$('subj').children].forEach(x=>x.classList.toggle('go',x===b));drawTopics()};$('subj').appendChild(b)});
-$('q').addEventListener('input',drawTopics);drawTopics();
-$('go').onclick=run;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let LB=[];
+/* ---------- drawing helpers ---------- */
+const FF='font-family="Arial,Helvetica,sans-serif"';
+const T=(x,y,s,z=20,a='middle',fill='#111',w='normal',x2='')=>`<text x="${x}" y="${y}" font-size="${z}" text-anchor="${a}" fill="${fill}" font-weight="${w}" ${FF} ${x2}>${s}</text>`;
+const lab=(px,py,tx,ty,n,d)=>{LB.push([n,d]);const r=tx>400;return `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="#444" stroke-width="1.3"/><circle cx="${px}" cy="${py}" r="3" fill="#444"/>`+T(tx+(r?7:-7),ty+7,n.replace(/^- /,''),20,r?'start':'end')};
+const E=(cx,cy,rx,ry,f,s,w=2,x='')=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${f||'none'}" stroke="${s||'none'}" stroke-width="${w}" ${x}/>`;
+const C=(cx,cy,r,f,s,w)=>E(cx,cy,r,r,f,s,w);
+const R=(x,y,w,h,f,s,rx=0,sw=2)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f||'none'}" stroke="${s||'none'}" stroke-width="${sw}"/>`;
+const P=(d,s='#333',w=2,f='none',x='')=>`<path d="${d}" fill="${f}" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${x}/>`;
+const L=(x1,y1,x2,y2,s='#333',w=2,dash='')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s}" stroke-width="${w}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
+const AR=(x1,y1,x2,y2,s='#333',w=3,dash='')=>{const a=Math.atan2(y2-y1,x2-x1),k=12,p=(d)=>`${(x2-k*Math.cos(a+d)).toFixed(1)},${(y2-k*Math.sin(a+d)).toFixed(1)}`;return L(x1,y1,x2,y2,s,w,dash)+`<polygon points="${x2},${y2} ${p(.4)} ${p(-.4)}" fill="${s}"/>`};
+const zig=(x,y,v)=>P('M'+[[-40,0],[-30,0],[-25,-14],[-15,14],[-5,-14],[5,14],[15,-14],[25,14],[30,0],[40,0]].map(p=>v?`${x+p[1]} ${y+p[0]}`:`${x+p[0]} ${y+p[1]}`).join(' L'),'#222',3);
+const meter=(x,y,s)=>C(x,y,18,'#fff','#222',2.5)+T(x,y+7,s,20,'middle','#111','bold');
 
-let lastSvg='',lastTitle='diagram';
-const AI_URL='https://text.pollinations.ai/openai'; // free, bina key
-async function ask(prompt){
-  const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:prompt}],private:true})});
-  if(!r.ok)throw{code:r.status};
-  const d=await r.json();return{text:d.choices[0].message.content}}
+/* ---------- Biology ---------- */
+function animalCell(){return E(400,300,175,200,'#fdf3dc','#b8860b',4)+C(365,275,70,'#d8d0ff','#5b4bb7',3)+C(365,275,63,'none','#7a6bd0',1.5)+C(375,285,18,'#5b4bb7')
++P('M330 250 q12 -14 24 0 t24 0 t24 0','#7a6bd0',2)
++E(460,395,38,19,'#ffd7a8','#d2691e',2,'transform="rotate(-20 460 395)"')+P('M432 405 l9 -12 l9 12 l9 -12 l9 12 l9 -12','#d2691e',1.5)
++E(310,412,34,17,'#ffd7a8','#d2691e',2,'transform="rotate(15 310 412)"')
++[190,204,218,232].map((y,i)=>P(`M${425+i*4} ${y} q${45-i*4} -22 ${90-i*8} 0`,'#c9a400',5)).join('')
++C(305,175,14,'#f4a6c4','#c2185b')
++P('M270 368 q18 -22 36 0 t36 0 t36 0','#2e7d9a',5)+P('M270 384 q18 -22 36 0 t36 0 t36 0','#2e7d9a',5)
++[270,306,342,378].map(x=>C(x,363,4,'#222')).join('')+[[445,290],[480,325],[505,285],[420,350]].map(p=>C(p[0],p[1],4,'#333')).join('')
++R(437,336,6,18,'#444')+R(431,342,18,6,'#444')
++lab(575,300,600,300,'Cell membrane','Thin selectively permeable layer (lipid + protein) that surrounds the cell and controls what enters and leaves.')
++lab(515,208,600,150,'Golgi apparatus','Stack of flattened sacs; modifies, packs and dispatches proteins and lipids.')
++lab(500,285,600,250,'Ribosomes','Tiny granules that make proteins; free in cytoplasm or attached to rough ER.')
++lab(450,345,600,360,'Centrosome','Pair of centrioles; forms spindle fibres during animal cell division.')
++lab(490,392,600,430,'Mitochondrion','Powerhouse of the cell; releases energy (ATP) by respiration.')
++lab(292,178,205,140,'Lysosome','Sac of digestive enzymes; destroys worn-out parts and germs ("suicide bag").')
++lab(315,226,205,195,'Nuclear envelope','Double membrane around the nucleus, with pores.')
++lab(310,268,205,250,'Nucleus','Control centre; contains DNA (chromatin) and directs all cell activities.')
++lab(335,252,205,305,'- Chromatin','Thread-like DNA + protein; condenses into chromosomes during division.')
++lab(362,288,205,350,'- Nucleolus','Dark body inside the nucleus where ribosomes are made.')
++lab(275,372,205,400,'Rough ER','Network of membranes studded with ribosomes; makes and transports proteins.')
++lab(250,320,205,500,'Cytoplasm','Jelly-like fluid between nucleus and membrane where organelles float.')}
 
-const SYS=`You are a diagram generator for Indian students (science and social science; for maps draw a simple schematic outline, for history/economics use flowcharts, timelines or graphs) (NCERT/CBSE, NEET, JEE). Make an ACCURATE, clean, labelled 2D diagram as SVG.
-Rules: label ALL parts AND sub-parts in the diagram (number them 1,2,3… on the diagram if space is tight, with the numbered key drawn beside it); viewBox="0 0 800 700"; first element a white <rect> background; dark strokes (#222), soft pastel fills; font-family Arial, font-size 15-18 for labels; label lines (leader lines) from each part to text placed in margins so nothing overlaps; no scripts, no images, no external references; title text at top. Be scientifically correct; if unsure about a detail keep the diagram simpler rather than wrong.
-Output EXACTLY in this format and nothing else:
+function plantCell(){return R(235,110,330,380,'#eaf7e0','#2e7d32',18,10)+R(246,121,308,358,'none','#8bc34a',12,2)+R(300,200,200,235,'#d6ecff','#4a90c2',20,3)
++C(345,158,36,'#d8d0ff','#5b4bb7',2.5)+C(352,162,12,'#5b4bb7')
++[[272,300],[272,400],[528,290],[528,390]].map(p=>E(p[0],p[1],18,34,'#7bc96f','#2e7d32',2)+L(p[0]-10,p[1]-12,p[0]+10,p[1]-12,'#2e7d32',2)+L(p[0]-10,p[1],p[0]+10,p[1],'#2e7d32',2)+L(p[0]-10,p[1]+12,p[0]+10,p[1]+12,'#2e7d32',2)).join('')
++E(455,155,34,16,'#ffd7a8','#d2691e')+P('M432 160 l8 -10 l8 10 l8 -10 l8 10 l8 -10','#d2691e',1.5)
++lab(566,170,610,130,'Cell wall','Rigid outer layer of cellulose; gives shape and protection (only in plant cells).')
++lab(553,225,610,200,'Cell membrane','Thin living layer just inside the wall; controls entry and exit of substances.')
++lab(540,290,610,285,'Chloroplast','Green plastid with chlorophyll; site of photosynthesis (only in plants).')
++lab(500,345,610,350,'Large central vacuole','Large sac of cell sap; stores water and wastes and keeps the cell firm (turgid).')
++lab(497,415,610,415,'- Tonoplast','Membrane that surrounds the vacuole.')
++lab(486,152,610,70,'Mitochondrion','Releases energy (ATP) by respiration.')
++lab(312,150,205,150,'Nucleus','Control centre containing DNA.')
++lab(346,165,205,205,'- Nucleolus','Makes ribosomes.')
++lab(268,240,205,270,'Cytoplasm','Fluid in which organelles are suspended.')}
+
+function neuron(){return P('M245 280 Q200 240 160 250 M245 280 Q190 290 150 330 M262 255 Q250 200 215 170 M300 250 Q310 190 340 160 M330 265 Q380 215 400 190','#5b4bb7',5)
++P('M160 250 L130 235 M160 250 L140 275 M150 330 L120 330 M150 330 L135 360 M215 170 L190 150 M215 170 L235 145 M340 160 L335 130 M340 160 L365 140','#5b4bb7',3)
++E(300,300,62,52,'#d8d0ff','#5b4bb7',3)+C(305,300,24,'#fff','#5b4bb7',2)+C(309,303,8,'#5b4bb7')
++P('M360 300 H640','#8e7cc3',6)+[385,455,525].map(x=>R(x,284,60,32,'#ffe08a','#c9a400',14,2)).join('')
++P('M640 300 L690 250 M640 300 L700 300 M640 300 L690 350','#8e7cc3',4)+[[695,246],[705,300],[695,354]].map(p=>C(p[0],p[1],10,'#ff9aa2','#c2185b',2)).join('')
++lab(165,247,100,150,'Dendrites','Thin branches that receive impulses from other neurons and pass them to the cell body.')
++lab(300,345,300,430,'Cell body (cyton)','Contains the nucleus and most organelles; processes incoming impulses.')
++lab(309,303,420,430,'- Nucleus','Control centre of the neuron.')
++lab(362,300,480,200,'Axon hillock','Region where the axon leaves the cell body; impulse starts here.')
++lab(415,284,420,130,'Myelin sheath','Fatty insulating covering formed by Schwann cells; speeds up the impulse.')
++lab(448,300,520,230,'Node of Ranvier','Gap in the myelin sheath; impulse jumps from node to node.')
++lab(560,300,560,430,'Axon','Long fibre that carries impulses away from the cell body.')
++lab(705,300,650,450,'Axon terminals','Branched ends; release neurotransmitter into the synapse.')}
+
+function heart(){return P('M280 150 V252','#5b9bd5',20)+P('M370 345 V190 Q370 140 325 130','#5b9bd5',16)+P('M370 190 Q372 150 405 135','#5b9bd5',16)
++P('M425 345 V170 Q425 108 495 108 Q562 108 566 195','#e57373',20)+P('M550 275 H615','#e57373',14)+P('M550 315 H615','#e57373',14)
++R(250,250,100,92,'#9ec5fe','#2a5db0',34,3)+R(450,250,100,92,'#f4a3a3','#b03030',34,3)+R(262,350,133,140,'#9ec5fe','#2a5db0',50,3)+R(405,350,133,140,'#f4a3a3','#b03030',50,9)
++R(395,350,10,140,'#666')+L(285,346,330,346,'#222',6)+L(480,346,520,346,'#222',6)
++R(40,545,18,18,'#f4a3a3','#b03030')+T(66,560,'Oxygenated blood',18,'start')+R(260,545,18,18,'#9ec5fe','#2a5db0')+T(286,560,'Deoxygenated blood',18,'start')
++lab(280,190,225,170,'Vena cava','Brings deoxygenated blood from the body to the right atrium.')
++lab(262,295,225,260,'Right atrium','Upper right chamber; receives deoxygenated blood.')
++lab(308,346,225,330,'- Tricuspid valve','Valve between right atrium and right ventricle; stops back-flow.')
++lab(275,430,225,430,'Right ventricle','Pumps deoxygenated blood to the lungs through the pulmonary artery.')
++lab(335,133,225,100,'Pulmonary artery','Carries deoxygenated blood from the right ventricle to the lungs.')
++lab(535,112,650,70,'Aorta','Largest artery; carries oxygenated blood from the left ventricle to the whole body.')
++lab(610,275,650,200,'Pulmonary veins','Bring oxygenated blood from the lungs to the left atrium.')
++lab(520,262,650,270,'Left atrium','Upper left chamber; receives oxygenated blood.')
++lab(500,346,650,350,'- Bicuspid (mitral) valve','Valve between left atrium and left ventricle.')
++lab(520,430,650,430,'Left ventricle','Thick-walled chamber; pumps oxygenated blood to the whole body.')
++lab(400,470,430,530,'- Septum','Muscular wall that separates the right and left sides so the blood does not mix.')}
+
+function eye(){return P('M285 220 A140 140 0 1 1 285 380 Q215 300 285 220 Z','#9a9a9a',7,'#f7fbff')
++P('M291 224 A133 133 0 1 1 291 376','#6d4c41',3)+P('M434 171 A133 133 0 0 1 434 428','#e53935',7)
++E(320,300,18,48,'#cde9ff','#2a6fb0',2.5)+R(290,215,9,43,'#6b4a2b')+R(290,342,9,43,'#6b4a2b')
++E(322,236,13,8,'#f4b183','#a0522d')+E(322,364,13,8,'#f4b183','#a0522d')+L(322,244,320,254,'#555',1.5)+L(322,356,320,346,'#555',1.5)
++P('M520 356 Q570 380 610 420','#f2c744',14)+C(533,300,6,'#f9a825','#b26a00',1.5)
++lab(251,285,210,200,'Cornea','Transparent front part; most of the bending of light (refraction) happens here.')
++lab(272,320,210,250,'Aqueous humour','Watery fluid between cornea and lens; keeps the shape of the front of the eye.')
++lab(294,230,210,150,'Iris','Coloured muscular diaphragm; controls the size of the pupil.')
++lab(294,300,210,300,'Pupil','Opening in the iris; its size changes to control the amount of light entering.')
++lab(312,325,210,350,'Eye lens','Convex lens; focuses the image on the retina; its focal length changes (accommodation).')
++lab(322,364,210,410,'Ciliary muscles','Hold the lens; change its thickness to focus near and far objects.')
++lab(521,230,640,150,'Sclera','Tough white outer coat; protects the eyeball.')
++lab(440,250,640,200,'Vitreous humour','Transparent jelly filling the large cavity behind the lens; keeps the eyeball firm.')
++lab(527,260,640,250,'Retina','Light-sensitive screen with rods and cones; forms the real, inverted image.')
++lab(533,300,640,300,'- Yellow spot (fovea)','Region of sharpest vision; many cones.')
++lab(521,358,640,350,'- Blind spot','Point where the optic nerve leaves; no photoreceptors, so no vision.')
++lab(590,402,640,440,'Optic nerve','Carries electrical signals from the retina to the brain.')}
+
+/* ---------- Chemistry / Earth ---------- */
+const EL=[['Hydrogen','H',1,0,[1]],['Carbon','C',6,6,[2,4]],['Nitrogen','N',7,7,[2,5]],['Oxygen','O',8,8,[2,6]],['Sodium','Na',11,12,[2,8,1]],['Chlorine','Cl',17,18,[2,8,7]],['Argon','Ar',18,22,[2,8,8]],['Potassium','K',19,20,[2,8,8,1]]];
+function bohr(vi){const e=EL[vi],cx=400,cy=300;let s=C(cx,cy,36,'#ffd6d6','#c0392b',3)+T(cx,cy-2,e[2]+'p',16,'middle','#7a1c1c','bold')+T(cx,cy+16,e[3]+'n',16,'middle','#7a1c1c','bold');
+ const nm='KLMN';
+ e[4].forEach((n,i)=>{const r=80+i*50;s=C(cx,cy,r,'none','#7f8c8d',2)+s;for(let k=0;k<n;k++){const a=k/n*6.283+i*.6;s+=C(cx+r*Math.cos(a),cy+r*Math.sin(a),8,'#1565c0','#0d47a1',1.5)}
+  const a=-.9,px=cx+r*Math.cos(a),py=cy+r*Math.sin(a);s+=lab(px,py,650,110+i*50,nm[i]+' shell ('+n+')','Shell n = '+(i+1)+' holds '+n+' electron(s); maximum capacity is 2n² = '+2*(i+1)*(i+1)+'.')});
+ s+=lab(cx+25,cy-25,215,90,'Nucleus ('+e[2]+'p, '+e[3]+'n)','Protons ('+e[2]+') + neutrons ('+e[3]+'); mass number A = '+(e[2]+e[3])+'.');
+ LB.push(['Electronic configuration',e[0]+' ('+e[1]+'): '+e[4].join(', ')+'  →  valence electrons = '+e[4][e[4].length-1]]);
+ return T(400,40,e[0]+' ('+e[1]+') — Bohr model, Z = '+e[2],24,'middle','#111','bold')+s}
+
+function earth(){const c=330,m=300;return C(c,m,250,'#8d6e63','#5d4037',2)+C(c,m,235,'#d2793c')+C(c,m,137,'#f4a259')+C(c,m,48,'#ffe08a','#c9a400',2)
++lab(c+177,m-177,625,60,'Crust','Thin rocky outer layer (5–70 km); continents and ocean floor. Drawn thicker here for clarity.')
++lab(c+150,m-60,625,170,'Mantle','Thick layer of hot, semi-solid rock (about 2,900 km); convection currents here move the plates.')
++lab(c+90,m+60,625,300,'Outer core','Liquid iron and nickel; its motion creates Earth\'s magnetic field.')
++lab(c+20,m+25,625,430,'Inner core','Solid iron–nickel ball, very hot (about 5,400 °C) but solid due to enormous pressure.')
++T(330,590,'Not to scale: crust is much thinner than shown',17,'middle','#555')}
+
+/* ---------- Physics ---------- */
+function vt(v){const ax=P('M110 500 H730','#111',2.5)+P('M110 500 V70','#111',2.5)+T(420,550,'Time, t (s)  →',22)+T(45,290,'Velocity, v (m/s)  →',22,'middle','#111','normal','transform="rotate(-90 45 290)"');
+ const pts=[[[110,250],[640,250]],[[110,430],[640,160]],[[110,140],[640,430]]][v],mid=[375,(pts[0][1]+pts[1][1])/2];
+ const names=['Uniform velocity (a = 0)','Uniform acceleration','Uniform retardation'];
+ LB.push(['Slope of v–t graph','Slope = Δv / Δt = acceleration. '+['Here it is zero, so velocity is constant.','Positive slope: velocity increases uniformly.','Negative slope: velocity decreases uniformly.'][v]]);
+ LB.push(['Area under v–t graph','Area between the graph and the time axis = displacement (distance for motion in a straight line).']);
+ return ax+`<polygon points="110,500 110,${pts[0][1]} 640,${pts[1][1]} 640,500" fill="#cfe8ff" stroke="none"/>`+L(110,pts[0][1],640,pts[1][1],'#c0392b',5)+L(640,pts[1][1],640,500,'#666',1.5,'6 5')+T(640,525,'t',20)
+ +T(400,50,names[v],24,'middle','#111','bold')+T(300,485,'Area = displacement',20,'middle','#1b4f8a')+(()=>{const yl=x=>pts[0][1]+(pts[1][1]-pts[0][1])*(x-110)/530;return T(560,yl(560)-(v==1?26:(v==2?-40:18)),'slope = a',20,'middle','#c0392b','bold')})()}
+
+function sound(){let x=60,s='',cm=[],rf=[];const N=58;for(let i=0;i<N;i++){const d=11+5*Math.cos(2*Math.PI*(i+.5)/16);x+=d;s+=L(x,200,x,300,'#1565c0',3);if(i%16==7)cm.push(x);if(i%16==15)rf.push(x)}
+ let w='M60 480';for(let px=60;px<=700;px+=4){const phase=(px-cm[0])/(cm[1]-cm[0])*2*Math.PI;w+=` L${px} ${(450-50*Math.cos(phase)).toFixed(1)}`}
+ LB.push(['Compression','Region where the particles are crowded together: high pressure and high density.']);LB.push(['Rarefaction','Region where the particles are spread apart: low pressure and low density.']);LB.push(['Wavelength (λ)','Distance between two consecutive compressions (or two rarefactions).']);
+ return T(400,45,'Sound wave in air (longitudinal wave)',24,'middle','#111','bold')+s+AR(560,340,660,340,'#c0392b',3)+T(610,330,'wave direction',16,'middle','#c0392b')
+ +T(cm[0],170,'Compression (C)',20,'middle','#b71c1c','bold')+T(rf[0]+30,340,'Rarefaction (R)',20,'middle','#1b5e20','bold')
+ +L(cm[0],176,cm[0],196,'#b71c1c',1.5)+L(rf[0],304,rf[0]+20,322,'#1b5e20',1.5)
+ +L(cm[0],385,cm[1],385,'#222',2)+L(cm[0],375,cm[0],395,'#222',2)+L(cm[1],375,cm[1],395,'#222',2)+T((cm[0]+cm[1])/2,372,'Wavelength (λ)',20,'middle','#111','bold')
+ +P(w.replace('M60 480','M60 '+(450-50*Math.cos((60-cm[0])/(cm[1]-cm[0])*2*Math.PI)).toFixed(1)),'#c0392b',3)+L(60,450,700,450,'#999',1,'5 5')+T(60,540,'Pressure / density graph (peaks = compressions, troughs = rarefactions)',17,'start','#555')}
+
+const OP={cl:[3,2,1.5,1,.5],dl:[3,2,.5],cm:[3,2,1.5,1,.5],xm:[3,2,.5]};
+const OPN={cl:['Beyond 2F','At 2F','Between F and 2F','At F','Between F and O'],dl:['Far away (3f)','At 2f','Near the lens (0.5f)'],cm:['Beyond C','At C','Between F and C','At F','Between P and F'],xm:['Far away (3f)','At 2f','Near the mirror (0.5f)']};
+function optics(t,vi){const mir=t=='cm'||t=='xm',conv=t=='cl'||t=='cm',F=80,f=conv?F:-F,U=OP[t][vi]*F,h=50,cx=400,ay=300,xo=cx-U,yt=ay-h;
+ const inf=Math.abs(1/f-1/U)<1e-9,V=inf?null:1/(1/f-1/U),xi=inf?0:(mir?cx-V:cx+V),m=inf?0:-V/U,yi=ay-m*h,virt=!inf&&V<0;
+ const clampEnd=(x0,y0,dx,dy,xe)=>{let k=(xe-x0)/dx;const ye=y0+dy*k;if(ye>590||ye<10){k=Math.min(k,((ye>590?590:10)-y0)/dy)}return [x0+dx*k,y0+dy*k]};
+ let s=L(20,ay,780,ay,'#555',1.5);
+ if(t=='cl')s+=E(cx,ay,14,110,'#cfe8ff','#2a6fb0',3);
+ if(t=='dl')s+=P(`M386 190 Q400 300 386 410 L414 410 Q400 300 414 190 Z`,'#2a6fb0',3,'#cfe8ff');
+ if(t=='cm')s+=P(`M375 190 Q425 300 375 410`,'#555',7);
+ if(t=='xm')s+=P(`M425 190 Q375 300 425 410`,'#555',7);
+ const tick=(x,n)=>L(x,ay-7,x,ay+7,'#111',2)+T(x,ay+28,n,18);
+ if(!mir){s+=tick(cx-F,'F')+tick(cx+F,'F')+(t=='cl'?tick(cx-2*F,'2F')+tick(cx+2*F,'2F'):'')+T(cx,ay+28,'O',18)}
+ else{const sg=t=='cm'?-1:1;s+=tick(cx+sg*F,'F')+tick(cx+sg*2*F,'C')+T(cx,ay+28,'P',18)}
+ s+=AR(xo,ay,xo,yt,'#1b5e20',4)+T(xo,yt-12,'Object',18,'middle','#1b5e20','bold');
+ const R1='#d32f2f',R2='#1565c0',M=[cx,yt];
+ s+=L(xo,yt,cx,yt,R1,2.5);
+ if(!mir){
+  let dx,dy;if(inf){dx=F;dy=h}else{const sg=xi>cx?1:-1;dx=sg*(xi-cx);dy=sg*(yi-yt)}
+  const e1=clampEnd(cx,yt,dx,dy,780);s+=L(cx,yt,e1[0],e1[1],R1,2.5);if(virt)s+=L(cx,yt,xi,yi,R1,2,'6 5');
+  const e2=clampEnd(cx,ay,U,h,780);s+=L(xo,yt,cx,ay,R2,2.5)+L(cx,ay,e2[0],e2[1],R2,2.5);if(virt&&xi<xo)s+=L(xo,yt,xi,yi,R2,2,'6 5');
+ }else{
+  let dx,dy;if(inf){dx=-F;dy=h}else if(!virt){dx=xi-cx;dy=yi-yt}else{dx=cx-xi;dy=yt-yi}
+  const e1=clampEnd(cx,yt,dx,dy,20);s+=L(cx,yt,e1[0],e1[1],R1,2.5);if(virt)s+=L(cx,yt,xi,yi,R1,2,'6 5');
+  const e2=clampEnd(cx,ay,-U,h,20);s+=L(xo,yt,cx,ay,R2,2.5)+L(cx,ay,e2[0],e2[1],R2,2.5);if(virt)s+=L(cx,ay,xi,yi,R2,2,'6 5');
+ }
+ if(!inf){s+=AR(xi,ay,xi,yi,'#6a1b9a',4,virt?'6 4':'')+T(xi,yi+(yi<ay?-12:28),'Image',18,'middle','#6a1b9a','bold')}
+ const nat=inf?'Image forms at infinity: highly enlarged, real and inverted (rays emerge parallel).':`${V>0?'Real':'Virtual'}, ${m>0?'erect':'inverted'}, ${Math.abs(m)>1.02?'magnified':Math.abs(m)<.98?'diminished':'same size'} (magnification m = ${m.toFixed(1)}).`;
+ const nm={cl:'Convex lens',dl:'Concave lens',cm:'Concave mirror',xm:'Convex mirror'}[t];
+ LB.push(['Object position: '+OPN[t][vi],'u = '+OP[t][vi]+'f. '+nat]);
+ LB.push(['Ray 1 (red)',mir?'Parallel to the principal axis; after reflection it passes through '+(conv?'F':'(appears to come from) F')+'.':'Parallel to the principal axis; after refraction it '+(conv?'passes through F.':'diverges as if it came from F.')]);
+ LB.push(['Ray 2 (blue)',mir?'Directed at the pole P; it reflects at the same angle on the other side of the principal axis.':'Passes through the optical centre O without bending.']);
+ LB.push(['Dotted lines','Backward extensions of rays; they meet at a virtual image.']);
+ LB.push(['Formula',mir?'Mirror formula: 1/v + 1/u = 1/f ; m = −v/u':'Lens formula: 1/v − 1/u = 1/f ; m = v/u']);
+ return T(400,40,nm+' — object '+OPN[t][vi].replace(/^./,c=>c.toLowerCase()),22,'middle','#111','bold')+s}
+
+function slab(){const i=40*Math.PI/180,r=Math.asin(Math.sin(i)/1.5),x1=320,x2=480,y1=300,y2=y1+(x2-x1)*Math.tan(r),ye=y2+200*Math.tan(i);
+ return R(x1,130,x2-x1,340,'#d9eefc','#2a6fb0',0,3)+L(x1-130,y1,x2+130,y1,'#777',1.5,'6 5')+L(x1-130,y2,x2+130,y2,'#777',1.5,'6 5').replace(`y1="${y2}" x2`,`y1="${y2}" x2`)
+ +AR(x1-200*Math.cos(i),y1-200*Math.sin(i),x1,y1,'#d32f2f',3)+L(x1,y1,x2,y2,'#d32f2f',3)+AR(x2,y2,x2+200,ye,'#d32f2f',3)
+ +L(x1,y1,x2+160,y1+(x2+160-x1)*Math.tan(i),'#888',1.8,'7 5')
+ +T(x1-70,y1-32,'i',22,'middle','#111','bold')+T(x1+50,y1+45,'r',22,'middle','#111','bold')+T(x2+70,y2+32,'e',22,'middle','#111','bold')
+ +T(x1-175,y1-130,'Incident ray',20,'start')+T(x2+30,ye+40,'Emergent ray',20,'start')+T(400,118,'Glass slab',20,'middle','#2a6fb0','bold')+T(400,y1+62+(y2-y1)/2,'Refracted ray',18,'middle','#d32f2f')
+ +T(x1-72,y1+22,'Normal',16,'middle','#555')
+ +(()=>{const ex=x2+110,ey=y2+(110)*Math.tan(i),ix=ex,iy=y1+(ex-x1)*Math.tan(i),n=[-Math.sin(i),Math.cos(i)],d=(ex-ix)*n[0]+(ey-iy)*n[1];return AR(ex,ey,ex-n[0]*d,ey-n[1]*d,'#1b5e20',2.5)+T(ex+16,ey+(iy-ey)/2+5,'d',22,'start','#1b5e20','bold')})()
+ +(LB.push(['Incident ray, i','Ray falling on the first surface; i = angle between it and the normal.'],['Refracted ray, r','Bends towards the normal on entering the denser glass (r < i).'],['Emergent ray, e','Leaves the second surface parallel to the incident ray (e = i), so the slab only shifts the ray sideways.'],['Lateral displacement, d','Perpendicular distance between the incident direction and the emergent ray; it increases with thickness of the slab and angle of incidence.'],['Snell\'s law','sin i / sin r = refractive index of glass (about 1.5).']),'')}
+
+function prism(){const cols=['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#3949ab','#8e24aa'],nm=['Red','Orange','Yellow','Green','Blue','Indigo','Violet'];
+ let s=P('M320 430 L480 430 L400 291 Z','#2a6fb0',3,'#d9eefc')+AR(110,372,364,354,'#666',4)+L(364,354,440,360,'#999',3);
+ cols.forEach((c,i)=>{s+=L(440,360,640,410+i*17,c,3.5)});
+ s+=T(110,350,'White light',20,'start','#111','bold')+T(400,455,'Base',18)+T(400,275,'Prism',20,'middle','#2a6fb0','bold')+T(662,416,'Red (least bent)',17,'start','#e53935','bold')+T(662,522,'Violet (most bent)',17,'start','#8e24aa','bold')
+ +R(640,395,10,135,'#f5f5f5','#aaa',0,1)+T(645,560,'Screen',17,'middle','#555');
+ LB.push(['White light','Mixture of seven colours (VIBGYOR).'],['Dispersion','Splitting of white light into its colours on passing through a prism, because each colour has a different speed in glass and so bends by a different amount.'],['Red','Bends the least (longest wavelength).'],['Violet','Bends the most (shortest wavelength).'],['Spectrum','Band of seven colours: Violet, Indigo, Blue, Green, Yellow, Orange, Red.']);
+ return s}
+
+function circuit(v){const bat=P('M200 160 V292 M200 308 V440','#222',3)+L(180,292,220,292,'#222',3)+L(188,308,212,308,'#222',7)+T(238,288,'+',24,'start')+T(238,325,'–',24,'start')
+ +C(270,160,4,'#222')+C(310,160,4,'#222')+L(270,160,300,132,'#222',3)+meter(360,160,'A');
+ let s;
+ if(v==0){s=bat+P('M200 160 H266 M314 160 H342 M378 160 H410 M490 160 H530 M610 160 H700 V440 H200','#222',3)+zig(450,160)+zig(570,160)+P('M410 160 V90 H432 M468 90 H490 V160','#222',3)+meter(450,90,'V')
+  +lab(200,300,150,300,'Battery (cell)','Source of electromotive force; long plate = positive, short plate = negative.')+lab(290,146,250,95,'Plug key (switch)','Opens or closes the circuit.')+lab(360,142,350,50,'Ammeter','Measures current; always connected in series.')
+  +lab(450,175,420,235,'Resistor R₁','Opposes the current.')+lab(570,175,610,235,'Resistor R₂','Same current flows through R₁ and R₂.')+lab(468,90,640,60,'Voltmeter','Measures potential difference; connected in parallel across the resistor.')+T(400,520,'SERIES: only one path, same current everywhere',22,'middle','#111','bold');
+  LB.push(['Rules for series','Current is the same through each resistor; total voltage V = V₁ + V₂; equivalent resistance R = R₁ + R₂.']);
+ }else{s=bat+P('M200 160 H266 M314 160 H342 M378 160 H560 V260 M440 160 V260 M440 340 V440 M560 340 V440 M200 440 H560 M560 225 H650 V282 M650 318 V375 H560','#222',3)+C(440,160,5,'#222')+C(440,440,5,'#222')+zig(440,300,1)+zig(560,300,1)+meter(650,300,'V')
+  +lab(200,300,150,300,'Battery (cell)','Source of electromotive force.')+lab(290,146,250,95,'Plug key (switch)','Opens or closes the circuit.')+lab(360,142,350,50,'Ammeter','Measures the total current; connected in series.')
+  +lab(440,300,365,300,'Resistor R₁','Branch 1: gets its own share of the current.')+lab(560,300,610,410,'Resistor R₂','Branch 2: same potential difference as R₁.')+lab(668,300,720,210,'Voltmeter','Connected in parallel across R₂.')+T(400,520,'PARALLEL: separate paths, same voltage across each branch',22,'middle','#111','bold');
+  LB.push(['Rules for parallel','Potential difference is the same across each branch; total current I = I₁ + I₂; 1/R = 1/R₁ + 1/R₂.']);
+ }
+ return s}
+
+function magnet(){let s=R(320,280,80,40,'#e53935','#222',0,2)+R(400,280,80,40,'#1e88e5','#222',0,2)+T(360,308,'N',24,'middle','#fff','bold')+T(440,308,'S',24,'middle','#fff','bold');
+ for(let k=1;k<=4;k++){for(const sg of [-1,1]){const y0=300+sg*8*k,c1=[320-70*k,300+sg*(40*k+20)],c2=[480+70*k,300+sg*(40*k+20)];
+  s+=P(`M320 ${y0} C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} 480 ${y0}`,'#444',2);
+  const mx=.125*320+.375*c1[0]+.375*c2[0]+.125*480,my=.125*y0+.375*c1[1]+.375*c2[1]+.125*y0;
+  s+=`<polygon points="0,-7 16,0 0,7" fill="#444" transform="translate(${mx-8},${my}) "/>`}}
+ s+=L(20,300,320,300,'#444',2)+L(480,300,780,300,'#444',2)+AR(190,300,150,300,'#444',2)+AR(670,300,630,300,'#444',2);
+ LB.push(['North pole (N)','Field lines start here.'],['South pole (S)','Field lines end here.'],['Field lines','Closed curves from N to S outside the magnet (S to N inside). They never cross each other. Where they are closer together the field is stronger (near the poles).']);
+ return T(400,45,'Magnetic field lines of a bar magnet',24,'middle','#111','bold')+s+lab(345,282,150,200,'North pole','Field lines emerge from the N pole.')+lab(455,282,650,200,'South pole','Field lines enter the S pole.')+lab(400,150,650,100,'Field line','Direction of the line = direction of the force on a north pole; closer lines = stronger field.')}
+
+/* ---------- list of ready diagrams ---------- */
+const D=[
+{n:'Animal cell',s:'Biology',cls:[9,11,'N'],draw:animalCell},
+{n:'Plant cell',s:'Biology',cls:[9,11,'N'],draw:plantCell},
+{n:'Neuron (nerve cell)',s:'Biology',cls:[9,10,'N'],draw:neuron},
+{n:'Human heart',s:'Biology',cls:[10,'N'],draw:heart},
+{n:'Human eye',s:'Biology',cls:[10,'N'],draw:eye},
+{n:'Bohr model of an atom',s:'Chemistry',cls:[9,11],v:EL.map(e=>e[0]),draw:bohr},
+{n:'Layers of the Earth',s:'Social Science',cls:[9,10],draw:earth},
+{n:'Velocity–time graphs',s:'Physics',cls:[9,11],v:['Uniform velocity','Uniform acceleration','Uniform retardation'],draw:vt},
+{n:'Sound wave: compression and rarefaction',s:'Physics',cls:[9],draw:sound},
+{n:'Convex lens: image formation',s:'Physics',cls:[10,12,'N'],v:OPN.cl,draw:v=>optics('cl',v)},
+{n:'Concave lens: image formation',s:'Physics',cls:[10,12,'N'],v:OPN.dl,draw:v=>optics('dl',v)},
+{n:'Concave mirror: image formation',s:'Physics',cls:[10,12,'N'],v:OPN.cm,draw:v=>optics('cm',v)},
+{n:'Convex mirror: image formation',s:'Physics',cls:[10,12,'N'],v:OPN.xm,draw:v=>optics('xm',v)},
+{n:'Refraction through a glass slab',s:'Physics',cls:[10],draw:slab},
+{n:'Dispersion of light by a prism',s:'Physics',cls:[10],draw:prism},
+{n:'Series and parallel circuits',s:'Physics',cls:[10],v:['Series','Parallel'],draw:circuit},
+{n:'Magnetic field of a bar magnet',s:'Physics',cls:[10,12],draw:magnet}];
+
+/* ---------- UI ---------- */
+const CL=[['Class 9',9],['Class 10',10],['Class 11',11],['Class 12',12],['NEET / JEE','N']];
+let curC=9,curS='All',cur=null;
+function chips(box,items,on,fn){box.innerHTML='';items.forEach((it,i)=>{const b=document.createElement('button');b.className='chip'+(on(it,i)?' on':'');b.textContent=Array.isArray(it)?it[0]:it;b.onclick=()=>fn(it,i);box.appendChild(b)})}
+function drawTabs(){chips($('cls'),CL,it=>it[1]===curC,it=>{curC=it[1];drawTabs()});chips($('sbj'),['All','Biology','Physics','Chemistry','Social Science'],it=>it===curS,it=>{curS=it;drawTabs()});drawList()}
+function drawList(){const q=$('q').value.trim().toLowerCase(),box=$('list');box.innerHTML='';
+  const items=D.filter(d=>d.cls.includes(curC)&&(curS==='All'||d.s===curS)&&(!q||d.n.toLowerCase().includes(q)));
+  items.forEach(d=>{const b=document.createElement('button');b.className='dc';b.innerHTML='<b>'+esc(d.n)+'</b><span>'+d.s+(d.v?' · '+d.v.length+' variants':'')+'</span>';b.onclick=()=>openD(d,0);box.appendChild(b)});
+  if(!items.length)box.innerHTML='<p class="msg">Is section mein abhi koi diagram nahi hai. Neeche AI se banwa sakte hain.</p>'}
+function showParts(){$('vp').innerHTML='<h2>Parts and details</h2>'+LB.map(p=>'<div class="part'+(p[0].startsWith('- ')?' sub1':'')+'"><b>'+esc(p[0].replace(/^- /,''))+'</b> – '+esc(p[1])+'</div>').join('')}
+function openD(d,vi){cur=d;LB=[];const inner=d.draw(vi);
+  $('home').hidden=true;$('view').hidden=false;$('vt').textContent=d.n;
+  $('vsvg').innerHTML='<svg viewBox="0 0 860 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(d.n)+'"><rect width="860" height="600" fill="#fff"/>'+inner+'</svg>';
+  if(d.v)chips($('vc'),d.v,(x,i)=>i===vi,(x,i)=>openD(d,i));else $('vc').innerHTML='';
+  showParts();window.scrollTo(0,0)}
+$('back').onclick=()=>{$('view').hidden=true;$('home').hidden=false};
+$('q').addEventListener('input',drawList);
+
+/* ---------- AI fallback (beta, free service) ---------- */
+const AI_URL='https://text.pollinations.ai/openai';
+const SYS=`You are a diagram generator for Indian students. Make an ACCURATE, clean, labelled 2D diagram as SVG.
+Rules: viewBox="0 0 800 700"; first element a white <rect> background; dark strokes, soft pastel fills; font-family Arial, font-size 16-18; labels with leader lines placed in the margins so nothing overlaps; label ALL parts and sub-parts; no scripts, images or external references; title text at top. If unsure about a detail keep it simpler rather than wrong.
+Output EXACTLY in this format:
 ===TITLE===
 short title
 ===SVG===
 <svg ...>...</svg>
 ===PARTS===
-List EVERY part and sub-part shown in the diagram (complete, as in NCERT; do not skip any). Main parts as: Part name | function or key fact
-Sub-parts directly under their main part, each on its own line starting with "- ": - Sub-part name | function or key fact
-Sub-parts of sub-parts start with "-- ". Every label drawn in the SVG must appear here, and every part here must be labelled in the SVG.
-===TIP===
-one exam tip or common mistake`;
-
-async function run(){
-  const topic=$('q').value.trim();if(!topic)return;
-  
-  $('go').disabled=true;$('dl').hidden=true;$('out').innerHTML='<p class="msg">Diagram ban raha hai… (10–40 sec)</p>';$('out').scrollIntoView({behavior:'smooth'});
-  try{
-    const r=await ask(SYS+`\n\nTopic: ${topic}\nLevel: ${$('lvl').value}\nWrite the notes in ${$('lang').value}. Diagram labels stay in English (standard terms).`);
-    render(r.text)
-  }catch(e){
-    $('out').innerHTML='<p class="msg">'+(e&&e.code===429?'Thoda ruk kar dobara try karein.':'Diagram nahi ban paya (internet check karein). Dobara try karein.')+'</p>'
-  }
-  $('go').disabled=false}
-
+Part | function (one per line; sub-parts on their own line starting with "- ")`;
 function sec(t,n){const m=t.match(new RegExp('==='+n+'===\\s*([\\s\\S]*?)(?====[A-Z]+===|$)'));return m?m[1].trim():''}
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function render(t){
-  let svg=sec(t,'SVG');const i=svg.indexOf('<svg'),j=svg.lastIndexOf('</svg>');
-  if(i<0||j<0){$('out').innerHTML='<p class="msg">Diagram format sahi nahi aaya. Dobara try karein.</p>';return}
-  svg=svg.slice(i,j+6).replace(/<script[\s\S]*?<\/script>/gi,'').replace(/\son\w+="[^"]*"/gi,'');
-  if(!/xmlns=/.test(svg))svg=svg.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
-  lastSvg=svg;lastTitle=sec(t,'TITLE')||'diagram';
-  const src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-  const parts=sec(t,'PARTS').split('\n').filter(x=>x.includes('|')).map(l=>{
-    const lv=(l.trim().match(/^-+/)||[''])[0].length;
-    const [a,...b]=l.trim().replace(/^-+\s*/,'').split('|');
-    return `<div class="part" style="margin-left:${lv*16}px;${lv?'border-top:none;padding:3px 0;border-left:2px solid var(--bd);padding-left:8px':''}">${lv?'':''}<b>${esc(a.trim())}</b> – ${esc(b.join('|').trim())}</div>`}).join('');
-  $('out').innerHTML=`<div class="card"><h2>${esc(lastTitle)}</h2><img alt="${esc(lastTitle)}" src="${src}"></div>`+
-    (parts?`<div class="card"><h2>Parts</h2>${parts}</div>`:'')+
-    (sec(t,'TIP')?`<div class="card"><h2>Exam tip</h2><div class="msg">${esc(sec(t,'TIP'))}</div></div>`:'');
-}
-
+$('aigo').onclick=async()=>{const topic=$('aiq').value.trim();if(!topic)return;const b=$('aigo');b.disabled=true;b.textContent='Ban raha hai…';
+  try{const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:SYS+'\n\nTopic: '+topic+'\nLevel: '+(CL.find(c=>c[1]===curC)||CL[0])[0]}],private:true})});
+    if(!r.ok)throw 0;const t=(await r.json()).choices[0].message.content;let svg=sec(t,'SVG');const i=svg.indexOf('<svg'),j=svg.lastIndexOf('</svg>');if(i<0||j<0)throw 0;
+    svg=svg.slice(i,j+6).replace(/<script[\s\S]*?<\/script>/gi,'').replace(/\son\w+="[^"]*"/gi,'');if(!/xmlns=/.test(svg))svg=svg.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+    LB=sec(t,'PARTS').split('\n').filter(x=>x.includes('|')).map(l=>{const k=l.trim().replace(/^-+\s*/,''),sub=/^-/.test(l.trim());const [a,...c]=k.split('|');return[(sub?'- ':'')+a.trim(),c.join('|').trim()]});
+    $('home').hidden=true;$('view').hidden=false;$('vt').textContent=sec(t,'TITLE')||topic;$('vc').innerHTML='';
+    $('vsvg').innerHTML='<img alt="" style="display:block;width:100%;min-width:720px" src="data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)+'">';showParts();window.scrollTo(0,0)}
+  catch(e){alert('AI diagram nahi ban paya. Thodi der baad (15 sec) dobara try karein, ya internet check karein.')}
+  b.disabled=false;b.textContent='AI se banao'};
+drawTabs();
 </script>
 </body>
 </html>
