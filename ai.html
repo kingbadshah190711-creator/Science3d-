@@ -49,7 +49,7 @@ input{width:100%}
 <div class="row"><button id="back">← Back</button></div>
 <h2 id="vt"></h2>
 <div class="row" id="vc"></div>
-<div class="row" id="vr"><button id="rl">⟲ 90°</button><button id="rr">⟳ 90°</button><input type="range" id="rs" min="0" max="359" value="0" aria-label="Rotate" style="width:150px;padding:0"><button id="zo">−</button><button id="zi">+</button><button id="zr">Reset</button></div>
+<div class="row" id="vr"><button id="rl">⟲ 90°</button><button id="rr">⟳ 90°</button><input type="range" id="rs" min="0" max="359" value="0" aria-label="Rotate" style="width:150px;padding:0"><button id="zo">−</button><button id="zi">+</button><button id="zr">Reset</button><button id="d3">3D view</button></div>
 <div class="svgw" id="vsvg"></div>
 <p class="msg" style="margin-top:6px">Chhote screen par diagram ko left-right scroll karein.</p>
 <div class="card" id="vp"></div>
@@ -1060,13 +1060,16 @@ function drawList(){const q=$('q').value.trim().toLowerCase(),box=$('list');box.
   $('more').querySelectorAll('.soon').forEach(b=>b.onclick=()=>{$('aiq').value=b.dataset.t;$('aigo').click()})}
 function showParts(){$('vp').innerHTML='<h2>Parts and details</h2>'+LB.map(p=>'<div class="part'+(p[0].startsWith('- ')?' sub1':'')+'"><b>'+esc(p[0].replace(/^- /,''))+'</b> – '+esc(p[1])+'</div>').join('')}
 let curInner='',curName='',vrot=0,vzoom=1;
+let v3=false,tx=0,ty=0;
+function tilt(){const sv=$('vsvg').firstChild;if(!sv)return;$('vsvg').style.perspective=v3?'1100px':'';$('vsvg').style.overflow=v3?'visible':'';$('vsvg').style.touchAction=v3?'none':'';sv.style.transform=v3?'rotateX('+tx+'deg) rotateY('+ty+'deg)':'';sv.style.boxShadow=v3?(-ty*1.2)+'px '+(tx*1.2+12)+'px 30px rgba(0,0,0,.35)':''}
 function paint(){const w=860,h=600,t=vrot*Math.PI/180,bw=Math.abs(w*Math.cos(t))+Math.abs(h*Math.sin(t)),bh=Math.abs(w*Math.sin(t))+Math.abs(h*Math.cos(t));
-  $('vsvg').innerHTML='<svg viewBox="'+(430-bw/2).toFixed(1)+' '+(300-bh/2).toFixed(1)+' '+bw.toFixed(1)+' '+bh.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(curName)+'" style="width:'+Math.round(vzoom*100)+'%;min-width:'+Math.round(720*vzoom)+'px"><rect x="-900" y="-900" width="2800" height="2400" fill="#fff"/><g transform="rotate('+vrot+' 430 300)">'+curInner+'</g></svg>'}
+  $('vsvg').innerHTML='<svg viewBox="'+(430-bw/2).toFixed(1)+' '+(300-bh/2).toFixed(1)+' '+bw.toFixed(1)+' '+bh.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(curName)+'" style="width:'+Math.round(vzoom*100)+'%;min-width:'+Math.round(720*vzoom)+'px"><rect x="-900" y="-900" width="2800" height="2400" fill="#fff"/><g transform="rotate('+vrot+' 430 300)">'+curInner+'</g></svg>';tilt()}
 function openD(d,vi,keep){cur=d;LB=[];const inner=d.draw(vi);
   $('home').hidden=true;$('view').hidden=false;$('vt').textContent=d.n;
   curInner=inner;curName=d.n;if(!keep){vrot=0;vzoom=1;$('rs').value=0}paint();
   $('vr').hidden=false;if(d.v)chips($('vc'),d.v,(x,i)=>i===vi,(x,i)=>openD(d,i,1));else $('vc').innerHTML='';
   showParts();window.scrollTo(0,0)}
+$('d3').onclick=()=>{v3=!v3;tx=v3?18:0;ty=v3?-24:0;$('d3').classList.toggle('on',v3);tilt()};(()=>{let dn=false,lx=0,ly=0;const w=$('vsvg');w.addEventListener('pointerdown',e=>{if(v3){dn=true;lx=e.clientX;ly=e.clientY;w.setPointerCapture(e.pointerId)}});w.addEventListener('pointermove',e=>{if(!dn)return;ty+=(e.clientX-lx)*.4;tx-=(e.clientY-ly)*.4;tx=Math.max(-80,Math.min(80,tx));lx=e.clientX;ly=e.clientY;tilt()});w.addEventListener('pointerup',()=>dn=false);w.addEventListener('pointercancel',()=>dn=false)})();
 $('rl').onclick=()=>{vrot=(vrot+270)%360;$('rs').value=vrot;paint()};$('rr').onclick=()=>{vrot=(vrot+90)%360;$('rs').value=vrot;paint()};$('rs').oninput=e=>{vrot=+e.target.value;paint()};$('zi').onclick=()=>{vzoom=Math.min(3,vzoom+.25);paint()};$('zo').onclick=()=>{vzoom=Math.max(.75,vzoom-.25);paint()};$('zr').onclick=()=>{vrot=0;vzoom=1;$('rs').value=0;paint()};
 $('back').onclick=()=>{$('view').hidden=true;$('home').hidden=false};
 $('q').addEventListener('input',drawList);

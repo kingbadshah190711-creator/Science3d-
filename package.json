@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "vendor": "cp node_modules/three/build/three.min.js www/three.min.js",
-    "sync": "npm run vendor && npx cap sync android"
+    "android:add": "npx cap add android",
+    "sync": "npm run vendor && npx cap sync android",
+    "android:open": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
