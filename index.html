@@ -1,29 +1,90 @@
-<!DOCTYPE html><html lang="hi"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Science3D</title>
+<!DOCTYPE html>
+<html lang="hi"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070f24">
+<title>Science 3D</title>
+<link rel="icon" href="favicon.png">
+<script src="app.js"></script>
 <style>
-:root{--bg:#eef3f1;--fg:#12302b;--card:#fff;--mut:#51706a;--ac:#0f8f78;--bd:#cfdcd8;padding-top:env(safe-area-inset-top,0px)}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1b19;--fg:#e3f3ef;--card:#152926;--mut:#8fb0a9;--ac:#3ed1b4;--bd:#25423d}}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;padding:24px 16px;max-width:560px;margin-inline:auto}
-h1{font-size:26px;margin:20px 0 4px}p{color:var(--mut);margin:0 0 22px}
-a{display:block;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:12px;color:var(--fg);text-decoration:none}
-a b{display:block;font-size:18px;color:var(--ac);margin-bottom:4px}a span{font-size:14px;color:var(--mut)}
-</style><style id="splash-css">
-#splash{position:fixed;inset:0;z-index:99999;background:#0d1b19;color:#e3f3ef;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;perspective:700px;transition:opacity .45s;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif}
-#splash .cube{width:76px;height:76px;position:relative;transform-style:preserve-3d;animation:cspin 3.2s linear infinite}
-#splash .cube i{position:absolute;inset:0;border:2px solid #3ed1b4;background:rgba(62,209,180,.13)}
-#splash .cube i:nth-child(1){transform:translateZ(38px)}#splash .cube i:nth-child(2){transform:rotateY(180deg) translateZ(38px)}#splash .cube i:nth-child(3){transform:rotateY(90deg) translateZ(38px)}#splash .cube i:nth-child(4){transform:rotateY(-90deg) translateZ(38px)}#splash .cube i:nth-child(5){transform:rotateX(90deg) translateZ(38px)}#splash .cube i:nth-child(6){transform:rotateX(-90deg) translateZ(38px)}
-@keyframes cspin{to{transform:rotateX(360deg) rotateY(360deg)}}
-#splash h1{font-size:22px;margin:0}#splash p{margin:0;font-size:15px;color:#8fb0a9}
-#splash .bar{width:190px;height:5px;border-radius:5px;background:#25423d;overflow:hidden}#splash .bar b{display:block;height:100%;width:40%;background:#3ed1b4;border-radius:5px;animation:cbar 1.1s ease-in-out infinite}
-@keyframes cbar{0%{margin-left:-40%}100%{margin-left:100%}}
-</style></head><body><div id="splash"><div class="cube"><i></i><i></i><i></i><i></i><i></i><i></i></div><h1>Science3D</h1><p>Initialising 3D view…</p><div class="bar"><b></b></div></div>
-<h1>🔬 Science3D</h1><p>Science diagrams for Class 6–12, NEET &amp; JEE</p>
-<a href="ai.html"><b>Diagrams</b><span>Class 9, 10, 11, 12 aur NEET/JEE ke ready-made labelled diagrams: turant khulte hain, bina internet. Naye topics ke liye AI (beta).</span></a>
-<a href="lab.html"><b>3D Library</b><span>Asli 3D models jo ghoomte aur zoom hote hain: 118 elements, molecules, crystals, DNA, heart, eye, brain, neuron, orbitals, fullerene, nanotube, magnetic aur electric fields, Earth aur Solar system. Compounds ki lists + PubChem search.</span></a>
+:root{--bg:#f2f6ff;--fg:#0b1a3a;--card:#fff;--mut:#5a6b8f;--ac:#0277bd;--ac2:#f57c00;--bd:#d6e0f5;--glow:rgba(2,119,189,.22);--sh:0 10px 30px rgba(20,40,90,.12);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="dark"]{--bg:#070f24;--fg:#eaf2ff;--card:#0f1b3a;--mut:#93a6cf;--ac:#29b6f6;--ac2:#ffb300;--bd:#1e3260;--glow:rgba(41,182,246,.28);--sh:0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:radial-gradient(900px 480px at 10% -8%,var(--glow),transparent 70%),radial-gradient(700px 380px at 105% 0,rgba(255,179,0,.12),transparent 70%),var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",Roboto,system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+header img{width:52px;height:52px;border-radius:15px;box-shadow:0 0 26px var(--glow)}
+header h1{font-size:22px;margin:0;line-height:1.1}header p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
+header>div{flex:1}
+button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px 12px;cursor:pointer;box-shadow:var(--sh)}
+.search{position:relative;margin-bottom:16px}
+.search input{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px 16px 14px 44px;box-shadow:var(--sh);outline:none}
+.search input:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--glow)}
+.search:before{content:"🔍";position:absolute;left:15px;top:12px;font-size:18px}
+#res{position:absolute;left:0;right:0;top:56px;background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--sh);z-index:10;overflow:hidden;display:none}
+#res a{display:flex;gap:10px;align-items:center;padding:11px 14px;color:var(--fg);text-decoration:none;border-bottom:1px solid var(--bd);font-size:14px}
+#res a:last-child{border:0}#res a small{color:var(--mut);margin-left:auto;font-size:12px}#res a:hover{background:var(--glow)}
+h2{font-size:15px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin:22px 2px 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.card{position:relative;display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:20px;color:#fff;text-decoration:none;overflow:hidden;box-shadow:var(--sh);min-height:128px;transition:transform .15s}
+.card:active{transform:scale(.97)}
+.card i{font-style:normal;font-size:34px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
+.card b{font-size:16px}.card span{font-size:12px;opacity:.92;line-height:1.35}
+.card:after{content:"";position:absolute;right:-30px;bottom:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.14)}
+.g1{background:linear-gradient(135deg,#00b894,#00796b)}.g2{background:linear-gradient(135deg,#ff9800,#e65100)}.g3{background:linear-gradient(135deg,#7c4dff,#4527a0)}.g4{background:linear-gradient(135deg,#29b6f6,#0277bd)}.g5{background:linear-gradient(135deg,#ec407a,#ad1457)}.g6{background:linear-gradient(135deg,#26c6da,#00838f)}
+.big{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#1e88e5,#5e35b1);min-height:0}
+.big i{font-size:40px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips a{padding:10px 16px;border-radius:999px;background:var(--card);border:1px solid var(--bd);color:var(--fg);text-decoration:none;font-weight:700;font-size:14px;box-shadow:var(--sh)}
+.chips a:hover{border-color:var(--ac);color:var(--ac)}
+.list{display:flex;flex-direction:column;gap:8px}.list a{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--bd);color:var(--fg);text-decoration:none;font-size:14px}.list a small{margin-left:auto;color:var(--mut)}
+.empty{color:var(--mut);font-size:13px;padding:4px 2px}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}.stats span{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--glow);color:var(--ac);font-weight:700}
+#splash{position:fixed;inset:0;z-index:99999;background:radial-gradient(600px 400px at 50% 40%,rgba(41,182,246,.22),transparent 70%),#031336;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .45s;color:#e3f3ff}
+#splash img{width:160px;height:160px;border-radius:36px;box-shadow:0 0 70px rgba(41,182,246,.45);animation:sp 1.8s ease-in-out infinite}
+@keyframes sp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+#splash p{margin:0;font-size:15px;color:#93a6cf}#splash .b2{width:190px;height:5px;border-radius:5px;background:#1e3260;overflow:hidden}#splash .b2 b{display:block;height:100%;width:40%;background:#29b6f6;border-radius:5px;animation:cb 1.1s ease-in-out infinite}
+@keyframes cb{0%{margin-left:-40%}100%{margin-left:100%}}
+</style></head>
+<body>
+<div id="splash"><img src="logo.png" alt="Science 3D"><p>Initialising 3D view…</p><div class="b2"><b></b></div></div>
+<div class="wrap">
+<header><img src="logo.png" alt=""><div><h1>Science 3D</h1><p>Class 9–12 · NEET · JEE · 3D models and diagrams</p></div><button id="thm" aria-label="Theme">◐</button></header>
+<div class="search"><input id="q" placeholder="Search: heart, DNA, benzene, lens, aspirin…" autocomplete="off" aria-label="Search"><div id="res"></div></div>
+<div class="stats"><span>118 elements</span><span>38 3D models</span><span>113 diagrams</span><span>PubChem compounds</span></div>
+<h2>Explore in 3D</h2>
+<div class="grid">
+<a class="card g1" data-s="Biology · 3D Models"><i>🧬</i><b>Biology 3D</b><span>Heart, brain, eye, cells, viruses, DNA — with X-ray and slice</span></a>
+<a class="card g2" data-s="Chemistry · Orbitals & Carbon"><i>⚗️</i><b>Chemistry 3D</b><span>Orbitals, C₆₀, nanotube, graphene</span></a>
+<a class="card g3" data-s="Chemistry · Periodic Table"><i>🧪</i><b>Periodic Table</b><span>118 elements and 3D atoms</span></a>
+<a class="card g4" data-s="Chemistry · Compound Search"><i>🔬</i><b>Compounds</b><span>Any compound from PubChem in 3D</span></a>
+<a class="card g5" data-s="Physics · 3D Fields"><i>🧲</i><b>Physics 3D</b><span>Magnetic and electric fields</span></a>
+<a class="card g6" data-s="Earth & Space · 3D"><i>🌍</i><b>Earth &amp; Space</b><span>Layers, globe, solar system, Moon</span></a>
+</div>
+<h2>Diagrams</h2>
+<a class="card big" href="ai.html"><i>📐</i><div><b>Diagram library</b><br><span>Labelled diagrams with a 3D depth view you can rotate</span></div></a>
+<div class="chips" style="margin-top:12px"><a href="ai.html?cls=9">Class 9</a><a href="ai.html?cls=10">Class 10</a><a href="ai.html?cls=11">Class 11</a><a href="ai.html?cls=12">Class 12</a><a href="ai.html?cls=N">NEET / JEE</a></div>
+<h2>⭐ Saved</h2><div class="list" id="fav"></div>
+<h2>Recently viewed</h2><div class="list" id="rec"></div>
+</div>
 <script>
-function hideSplash(ms){setTimeout(function(){var s=document.getElementById('splash');if(!s)return;s.style.opacity=0;setTimeout(function(){s.remove()},480)},ms||0)}
-(function(){var C=window.Capacitor;if(!C||!C.registerPlugin)return;try{var A=C.registerPlugin('App');A.addListener('backButton',function(){
- if(window.__back&&window.__back())return;
- var home=location.pathname==='/'||/index\.html$/.test(location.pathname);
- if(!home){location.href='index.html'}else{A.exitApp()}})}catch(e){}})();
-</script><script>window.addEventListener("load",function(){hideSplash(1300)})</script></body></html>
+var C3=[['Biology · 3D Models',[['dna','DNA double helix'],['phage','Bacteriophage'],['bact','Bacterium'],['neuron','Neuron'],['heart','Human heart'],['eye','Human eye'],['brain','Human brain'],['blood','Blood cells'],['cov','Coronavirus'],['hiv','HIV'],['mito','Mitochondrion'],['chloro','Chloroplast'],['acell','Animal cell'],['pcell','Plant cell'],['chrom','Chromosome'],['alv','Alveoli']]],
+['Biology · Inside',[['nucleus','Nucleus'],['golgi','Golgi apparatus'],['er','Endoplasmic reticulum'],['ribo','Ribosome'],['lyso','Lysosome'],['memb','Cell membrane']]],
+['Chemistry · Orbitals & Carbon',[['s','s orbital'],['p','p orbitals'],['d','d orbitals'],['sp3','sp3 hybridisation'],['c60','Fullerene C60'],['tube','Carbon nanotube'],['gr','Graphene'],['graphite','Graphite'],['hcp','HCP unit cell']]],
+['Chemistry · Crystals',[['sc','Simple cubic'],['bcc','BCC unit cell'],['fcc','FCC unit cell'],['nacl','NaCl lattice'],['cscl','CsCl'],['diamond','Diamond']]],
+['Chemistry · Molecule',[['water','Water'],['methane','Methane'],['co2','Carbon dioxide'],['ammonia','Ammonia'],['benzene','Benzene'],['ethene','Ethene'],['sf6','SF6'],['pcl5','PCl5'],['xef4','XeF4']]],
+['Physics · 3D Fields',[['magnet','Bar magnet field'],['solenoid','Solenoid'],['e0','Electric dipole']]],
+['Earth & Space · 3D',[['layers','Earth layers'],['globe','Latitude and longitude globe'],['solar','Solar system'],['moon','Sun Earth Moon phases']]]];
+function lh(s,k){return 'lab.html?open='+encodeURIComponent(s+'|'+(k||''))}
+document.querySelectorAll('.card[data-s]').forEach(function(a){a.href=lh(a.dataset.s,'')});
+function list(el,arr){el.innerHTML='';if(!arr.length){el.innerHTML='<div class="empty">Abhi kuch nahi. Kisi bhi model ya diagram mein “☆ Save” dabayein.</div>';return}
+ arr.slice(0,8).forEach(function(o){var a=document.createElement('a');a.href=S3.href(o);a.innerHTML='<span>'+(o.t==='lab'?'🧊':'📐')+'</span>'+(o.n||o.k)+'<small>'+(o.t==='lab'?'3D':'Diagram')+'</small>';el.appendChild(a)})}
+list(document.getElementById('fav'),S3.favs());list(document.getElementById('rec'),S3.recents());
+var q=document.getElementById('q'),res=document.getElementById('res');
+q.oninput=function(){var t=q.value.trim().toLowerCase();if(t.length<2){res.style.display='none';return}var h='',n=0;
+ C3.forEach(function(g){g[1].forEach(function(m){if(n<7&&m[1].toLowerCase().indexOf(t)>=0){n++;h+='<a href="'+lh(g[0],m[0])+'">🧊 '+m[1]+'<small>3D model</small></a>'}})});
+ h+='<a href="ai.html?q='+encodeURIComponent(q.value.trim())+'">📐 Diagrams: “'+q.value.trim()+'”<small>search</small></a><a href="lab.html?q='+encodeURIComponent(q.value.trim())+'">🔬 Compound: “'+q.value.trim()+'”<small>PubChem</small></a>';res.innerHTML=h;res.style.display='block'};
+document.addEventListener('click',function(e){if(!e.target.closest('.search'))res.style.display='none'});
+window.addEventListener('load',function(){setTimeout(function(){var s=document.getElementById('splash');s.style.opacity=0;setTimeout(function(){s.remove()},480)},1200)});
+(function(){var C=window.Capacitor;if(!C||!C.registerPlugin)return;try{var A=C.registerPlugin('App');A.addListener('backButton',function(){A.exitApp()})}catch(e){}})();
+</script>
+</body></html>
