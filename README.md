@@ -11,3 +11,7 @@ Ye tab aata hai jab purana Science3D alag signature se install ho. Is version ka
 - Naya app purane ke saath install ho jayega (purana app baad mein uninstall kar do).
 - Aage ke saare updates isi key se bante hain, isliye naya APK purane ke upar seedha install hoga.
 Zaroori: debug.keystore file ko repository ki root mein upload karna mat bhoolna.
+
+## Naya (modern) Science 3D app
+- Logo/icons: android-res/ folder (build ke time Android project mein copy hota hai).
+- Home screen: www/index.html; 3D models: www/lab.html; diagrams: www/ai.html.
