@@ -1,0 +1,279 @@
+name: Science3D Android
+
+# Builds the Science3D web app into an Android APK with Capacitor.
+# Push to main/master -> test, build debug APK, refresh latest pre-release
+# Push a tag like v2.1.0 -> test, build, publish a versioned GitHub Release
+# Pull request -> test and build only
+# Run workflow manually -> choose debug or release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+    paths-ignore: ['**.md']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: Build type (release requires Android signing secrets)
+        type: choice
+        options: [debug, release]
+        default: debug
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+
+jobs:
+  verify:
+    name: Test Science3D web app
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate files and JavaScript
+        run: node build.mjs check
+
+      - name: Build web app
+        run: node build.mjs web
+
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test in a real browser
+        run: node build.mjs smoke
+
+      - name: Upload test screenshots
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: smoke-screenshots
+          path: smoke/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  build:
+    name: Build Science3D APK
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+
+    outputs:
+      name: ${{ steps.ver.outputs.name }}
+
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package.json
+
+      - name: Set up Java and Gradle cache
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+          cache-dependency-path: package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Add reminders plugin (optional)
+        continue-on-error: true
+        run: npm install --no-audit --no-fund @capacitor/local-notifications@^8.0.0
+
+      - name: Make sure Android SDK 36 is installed
+        continue-on-error: true
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Work out the version
+        id: ver
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            NAME="${GITHUB_REF_NAME#v}"
+          else
+            NAME="${BASE}-b${GITHUB_RUN_NUMBER}"
+          fi
+          CODE=$((100 + GITHUB_RUN_NUMBER))
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Version $NAME (code $CODE)"
+
+      - name: Build web app
+        run: node build.mjs web
+
+      - name: Create the Android project
+        run: npx cap add android
+
+      - name: Add voice input (optional)
+        continue-on-error: true
+        run: node build.mjs native
+
+      - name: Make icons and splash screens
+        continue-on-error: true
+        run: |
+          node build.mjs assets
+          npx capacitor-assets generate --android --assetPath assets \
+            --iconBackgroundColor '#060b14' --splashBackgroundColor '#060b14'
+
+      - name: Set the app version
+        env:
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          VERSION_CODE: ${{ steps.ver.outputs.code }}
+        run: node build.mjs patch
+
+      - name: Sync web files into Android
+        run: npx cap sync android
+
+      - name: Use the project debug signing key
+        run: |
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore
+
+      - name: Build debug APK
+        id: gradle1
+        continue-on-error: true
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --console=plain --warning-mode summary
+
+      - name: Retry without optional features
+        if: steps.gradle1.outcome == 'failure'
+        run: |
+          echo "::warning::Voice input and reminders were left out because the build with them failed."
+          node build.mjs native --remove
+          npm uninstall --no-audit --no-fund @capacitor/local-notifications || true
+          npx cap sync android
+          cd android && ./gradlew clean assembleDebug --console=plain --warning-mode summary
+
+      - name: Collect and verify the debug APK
+        env:
+          NAME: ${{ steps.ver.outputs.name }}
+        run: |
+          mkdir -p dist
+          SRC=$(find android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          [ -n "$SRC" ] || { echo "No debug APK was produced"; exit 1; }
+          cp "$SRC" "dist/Science3D-${NAME}-debug.apk"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          "$BT/apksigner" verify --print-certs "dist/Science3D-${NAME}-debug.apk" | head -n 3
+
+      - name: Build signed release APK
+        if: env.HAS_KEYSTORE == 'true' && (startsWith(github.ref, 'refs/tags/v') || inputs.build_type == 'release')
+        env:
+          NAME: ${{ steps.ver.outputs.name }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          (cd android && ./gradlew assembleRelease --console=plain --warning-mode summary)
+          UNSIGNED=$(find android/app/build/outputs/apk/release -name '*.apk' | head -n 1)
+          [ -n "$UNSIGNED" ] || { echo "No release APK was produced"; exit 1; }
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          "$BT/zipalign" -p -f 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.keystore" \
+            --ks-key-alias "$KEY_ALIAS" --ks-pass env:KS_PASS --key-pass env:KEY_PASS \
+            --out "dist/Science3D-${NAME}-release.apk" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" verify "dist/Science3D-${NAME}-release.apk"
+          rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Checksums and summary
+        env:
+          NAME: ${{ steps.ver.outputs.name }}
+          CODE: ${{ steps.ver.outputs.code }}
+        run: |
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          {
+            echo "## Science3D ${NAME}"
+            echo ""
+            echo "Version code ${CODE}"
+            echo ""
+            echo "| File | Size | SHA-256 (first 16) |"
+            echo "|---|---|---|"
+            for f in dist/*.apk; do
+              echo "| $(basename "$f") | $(du -h "$f" | cut -f1) | $(sha256sum "$f" | cut -c1-16) |"
+            done
+            echo ""
+            echo "Download the APK from the Artifacts section or Releases page."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: Science3D-APK-${{ steps.ver.outputs.name }}
+          path: dist/
+          retention-days: 30
+          if-no-files-found: error
+
+  release:
+    name: Publish Science3D release
+    needs: build
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download the APK
+        uses: actions/download-artifact@v7
+        with:
+          name: Science3D-APK-${{ needs.build.outputs.name }}
+          path: dist
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ needs.build.outputs.name }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+            else
+              gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" \
+                --title "Science3D ${NAME}" --generate-notes
+            fi
+          else
+            TAG=latest
+            gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes 2>/dev/null || true
+            gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --prerelease \
+              --title "Science3D latest build (${NAME})" \
+              --notes "Automatic build of the newest Science3D commit. Install the APK on your phone. Debug-signed with the project key."
+          fi
+          
